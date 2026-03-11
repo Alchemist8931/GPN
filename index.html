@@ -42,7 +42,7 @@
         <div class="auth-form">
             <div class="logo">🛡️</div>
             <h1>VPN Access</h1>
-            <p class="subtitle">Зарегистрируйтесь для доступа</p>
+            <p class="subtitle">Создайте аккаунт</p>
             <div id="auth-error" class="error-msg"></div>
             <input type="email" id="email-input" placeholder="Email" autocomplete="email">
             <input type="password" id="pass-input" placeholder="Пароль" autocomplete="new-password">
@@ -98,7 +98,8 @@
 
             supabaseClient.auth.onAuthStateChange((event, session) => {
                 updateUI(!!session);
-                if (session) fetchStatus();
+                // Немного ждем перед запросом статуса, чтобы триггер успел отработать
+                if (session) setTimeout(() => fetchStatus(), 500);
             });
         }
 
@@ -117,63 +118,37 @@
             return session ? session.access_token : null;
         }
 
-        // --- SCENARIO: REGISTRATION ---
+        // --- REGISTRATION ---
         signupBtn.addEventListener('click', async () => {
             authError.innerText = "";
             signupBtn.disabled = true;
             signupBtn.innerHTML = '<span class="loader"></span> Регистрация...';
 
-            try {
-                // 1. Создаем пользователя в Auth
-                const { data: { user, session }, error } = await supabaseClient.auth.signUp({
-                    email: emailInput.value,
-                    password: passInput.value,
-                });
+            const { data: { user, session }, error } = await supabaseClient.auth.signUp({
+                email: emailInput.value,
+                password: passInput.value,
+            });
 
-                if (error) throw error;
-
-                // 2. Если пользователь создан, создаем запись на X-UI
-                if (user) {
-                    // Обновляем кнопку
-                    signupBtn.innerHTML = '<span class="loader"></span> Настройка сервера...';
-                    
-                    // Ждем появления токена (если сессия не вернулась сразу)
-                    // Примечание: если включено Confirm Email, сессии не будет. 
-                    // Убедитесь, что Confirm Email отключен в Supabase!
-                    if (!session) {
-                         authError.innerText = "✅ Аккаунт создан! Пожалуйста, войдите нажав кнопку ниже.";
-                         authError.style.color = "#4caf50";
-                         signupBtn.innerHTML = "Создать аккаунт";
-                         signupBtn.disabled = false;
-                         return;
-                    }
-
-                    const token = session.access_token;
-                    
-                    // Вызываем Edge Function для создания клиента
-                    const res = await fetch(`${FUNCTION_URL}/init-user`, {
-                        method: 'POST',
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    const data = await res.json();
-
-                    if (!res.ok) throw new Error(data.error || "Ошибка X-UI");
-                    
-                    // Успех
-                    authError.style.color = "#4caf50";
-                    authError.innerText = "✅ Аккаунт готов!";
-                    // UI сам переключится на главный экран благодаря onAuthStateChange
-                }
-            } catch (e) {
-                authError.innerText = e.message;
-                authError.style.color = "var(--highlight)";
-            } finally {
+            if (error) {
+                authError.innerText = error.message;
                 signupBtn.disabled = false;
                 signupBtn.innerHTML = "Создать аккаунт";
+                return;
             }
+
+            // Если email confirmation включен - сессии не будет
+            if (!session) {
+                authError.innerText = "✅ Проверьте почту для подтверждения.";
+                authError.style.color = "#4caf50";
+            } else {
+                // Сессия есть - автоматический вход, UI переключится сам
+            }
+            
+            signupBtn.disabled = false;
+            signupBtn.innerHTML = "Создать аккаунт";
         });
 
-        // --- SCENARIO: LOGIN ---
+        // --- LOGIN ---
         loginBtn.addEventListener('click', async () => {
             authError.innerText = "";
             loginBtn.disabled = true;
@@ -213,7 +188,7 @@
             } catch (e) { statusText.innerText = "Ошибка сети"; }
         }
 
-        // --- SCENARIO: BUY / CONNECT ---
+        // --- MAIN BUTTON ACTION ---
         connectBtn.addEventListener('click', async () => {
             mainError.innerText = "";
             const token = await getAccessToken();
@@ -221,7 +196,6 @@
             connectBtn.innerHTML = '<span class="loader"></span> Обработка...';
 
             try {
-                // Проверяем статус
                 const statusRes = await fetch(`${FUNCTION_URL}/status`, { headers: { Authorization: `Bearer ${token}` } });
                 const statusData = await statusRes.json();
 
@@ -235,7 +209,7 @@
                     const buyData = await buyRes.json();
                     
                     if (buyData.success) {
-                        await fetchStatus(); // Обновляем UI
+                        await fetchStatus();
                         mainError.innerText = "✅ Подписка активирована! Нажмите еще раз для подключения.";
                         mainError.style.color = "#4caf50";
                     } else {
