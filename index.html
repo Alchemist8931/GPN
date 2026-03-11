@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="My VPN">
+    
+    <title>VPN Service</title>
+    
+    <!-- Manifest для PWA -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Иконки для iOS (нужно добавить свои изображения в репозиторий или использовать заглушки) -->
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2815/2815422.png">
+    
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --accent: #0f3460;
+            --highlight: #e94560;
+            --text: #eaeaea;
+            --text-dim: #a0a0a0;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-weight: 600;
+        }
+
+        p.subtitle {
+            color: var(--text-dim);
+            margin-bottom: 30px;
+        }
+
+        /* Forms */
+        .auth-form, .main-screen {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--accent);
+            background: var(--bg-color);
+            color: var(--text);
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--highlight);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: var(--highlight);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button.secondary {
+            background: var(--accent);
+            margin-top: 10px;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Dashboard Elements */
+        .status-card {
+            background: var(--accent);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-label {
+            font-size: 14px;
+            color: var(--text-dim);
+        }
+
+        .status-value {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .status-active { color: #4caf50; }
+        .status-inactive { color: #f44336; }
+
+        .connect-btn {
+            font-size: 18px;
+            padding: 20px;
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+            margin-bottom: 15px;
+        }
+        
+        .connect-btn.inactive {
+             background: linear-gradient(135deg, #555, #333);
+        }
+
+        .hidden { display: none; }
+
+        .error-msg {
+            color: var(--highlight);
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        /* Loader */
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid var(--highlight);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <!-- Экран Авторизации -->
+    <div id="auth-screen" class="container">
+        <div class="auth-form">
+            <div class="logo">🛡️</div>
+            <h1>VPN Access</h1>
+            <p class="subtitle">Войдите или зарегистрируйтесь</p>
+            
+            <div id="auth-error" class="error-msg"></div>
+            
+            <input type="email" id="email-input" placeholder="Email" autocomplete="email">
+            <input type="password" id="pass-input" placeholder="Пароль" autocomplete="current-password">
+            
+            <button id="login-btn">Войти</button>
+            <button id="signup-btn" class="secondary">Регистрация</button>
+        </div>
+    </div>
+
+    <!-- Главный экран -->
+    <div id="main-screen" class="container hidden">
+        <div class="main-screen">
+            <div class="logo">🔑</div>
+            <h1>Ваш VPN</h1>
+            
+            <div class="status-card">
+                <span class="status-label">Статус подписки:</span>
+                <span id="status-text" class="status-value">Проверка...</span>
+            </div>
+
+            <!-- Кнопка "Одна кнопка" -->
+            <button id="connect-btn" class="connect-btn">
+                Подключить VPN
+            </button>
+
+            <div id="main-error" class="error-msg"></div>
+
+            <button id="logout-btn" class="secondary">Выйти</button>
+        </div>
+    </div>
+
+    <!-- Подключение скриптов -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // --- CONFIG ---
+        // ВАЖНО: Замените эти значения на свои из Supabase Settings -> API
+        const SUPABASE_URL = 'https://ВАШ_PROJECT_ID.supabase.co';
+        const SUPABASE_ANON_KEY = 'ВАш_ANON_KEY';
+
+        // URL вашей Edge Function (замените YOUR_PROJECT_REF)
+        const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/vpn-api`;
+
+        // --- INIT SUPABASE ---
+        const { createClient } = window.supabase;
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- ELEMENTS ---
+        const authScreen = document.getElementById('auth-screen');
+        const mainScreen = document.getElementById('main-screen');
+        const emailInput = document.getElementById('email-input');
+        const passInput = document.getElementById('pass-input');
+        const loginBtn = document.getElementById('login-btn');
+        const signupBtn = document.getElementById('signup-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const connectBtn = document.getElementById('connect-btn');
+        const statusText = document.getElementById('status-text');
+        const authError = document.getElementById('auth-error');
+        const mainError = document.getElementById('main-error');
+
+        // --- APP LOGIC ---
+
+        // Проверка сессии при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
+            registerServiceWorker();
+        });
+
+        async function initApp() {
+            const { data: { session } } = await supabase.auth.getSession();
+            updateUI(!!session);
+
+            // Слушатель изменений авторизации
+            supabase.auth.onAuthStateChange((event, session) => {
+                updateUI(!!session);
+                if (session) fetchStatus();
+            });
+        }
+
+        function updateUI(isLoggedIn) {
+            if (isLoggedIn) {
+                authScreen.classList.add('hidden');
+                mainScreen.classList.remove('hidden');
+                fetchStatus();
+            } else {
+                authScreen.classList.remove('hidden');
+                mainScreen.classList.add('hidden');
+            }
+        }
+
+        // --- AUTH FUNCTIONS ---
+
+        loginBtn.addEventListener('click', async () => {
+            authError.innerText = "";
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="loader"></span> Вход...';
+
+            const { error } = await supabase.auth.signInWithPassword({
+                email: emailInput.value,
+                password: passInput.value,
+            });
+
+            if (error) authError.innerText = error.message;
+            
+            loginBtn.disabled = false;
+            loginBtn.innerText = "Войти";
+        });
+
+        signupBtn.addEventListener('click', async () => {
+            authError.innerText = "";
+            signupBtn.disabled = true;
+            signupBtn.innerHTML = '<span class="loader"></span> Регистрация...';
+
+            const { error } = await supabase.auth.signUp({
+                email: emailInput.value,
+                password: passInput.value,
+            });
+
+            if (error) {
+                authError.innerText = error.message;
+            } else {
+                authError.innerText = "✅ Проверьте почту для подтверждения!";
+                authError.style.color = "#4caf50";
+            }
+
+            signupBtn.disabled = false;
+            signupBtn.innerText = "Регистрация";
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            await supabase.auth.signOut();
+        });
+
+        // --- VPN LOGIC ---
+
+        async function getAccessToken() {
+            const { data: { session } } = await supabase.auth.getSession();
+            return session ? session.access_token : null;
+        }
+
+        async function fetchStatus() {
+            const token = await getAccessToken();
+            if (!token) return;
+
+            try {
+                const res = await fetch(`${FUNCTION_URL}/status`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data.active) {
+                    const date = new Date(data.paid_until * 1000).toLocaleDateString('ru-RU');
+                    statusText.innerText = `Активна до ${date}`;
+                    statusText.className = "status-value status-active";
+                    connectBtn.classList.remove('inactive');
+                    connectBtn.innerText = "Подключить VPN";
+                } else {
+                    statusText.innerText = "Не активна";
+                    statusText.className = "status-value status-inactive";
+                    connectBtn.classList.add('inactive');
+                    connectBtn.innerText = "Купить подписку"; // Меняем текст кнопки
+                }
+            } catch (e) {
+                statusText.innerText = "Ошибка сети";
+            }
+        }
+
+        // Обработка "Одной кнопки"
+        connectBtn.addEventListener('click', async () => {
+            mainError.innerText = "";
+            const token = await getAccessToken();
+            
+            connectBtn.disabled = true;
+            connectBtn.innerHTML = '<span class="loader"></span> Обработка...';
+
+            // Логика:
+            // Если статус не активен -> Пробуем создать подписку (Mock оплата)
+            // Если статус активен -> Получаем ключ и редиректим
+            
+            try {
+                // 1. Получаем текущий статус
+                const statusRes = await fetch(`${FUNCTION_URL}/status`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const statusData = await statusRes.json();
+
+                if (!statusData.active) {
+                    // 2. Если не активна, покупаем (в демо режиме создаем автоматом)
+                    // В реальном проекте здесь открылся бы виджет оплаты ЮКасса/Stripe
+                    const buyRes = await fetch(`${FUNCTION_URL}/create-subscription`, {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const buyData = await buyRes.json();
+
+                    if (buyData.success) {
+                        await fetchStatus(); // Обновляем UI
+                        mainError.innerText = "✅ Подписка оформлена! Нажмите еще раз для подключения.";
+                        mainError.style.color = "#4caf50";
+                    } else {
+                        mainError.innerText = "Ошибка оплаты: " + (buyData.error || "неизвестная");
+                    }
+                } else {
+                    // 3. Если активна, получаем ключ
+                    const keyRes = await fetch(`${FUNCTION_URL}/get-key`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const keyData = await keyRes.json();
+
+                    if (keyData.url) {
+                        // МЕХАНИКА ОДНОЙ КНОПКИ
+                        // Пробуем открыть через схему Streisand (или другую)
+                        // Ссылка вида: streisand://import?url=...
+                        
+                        const encodedUrl = encodeURIComponent(keyData.url);
+                        
+                        // Попытка открыть в приложении Streisand (iOS/Android)
+                        // Если приложение не установлено, браузер останется на странице или перейдет в App Store (если настроено)
+                        const deepLink = `streisand://import?url=${encodedUrl}`;
+                        
+                        // Для V2Box: v2box://import?url=...
+                        // Для Sing-box: sing-box://import-url?url=...
+                        
+                        // Открываем ссылку
+                        // В PWA window.location.href работает надежнее window.open
+                        window.location.href = deepLink;
+                        
+                        // На всякий случай показываем ссылку текстом, если редирект не сработал
+                        setTimeout(() => {
+                            if (document.hasFocus()) {
+                                mainError.innerText = "Если приложение не открылось, скопируйте ссылку вручную.";
+                                // Можно показать модалку с текстом ссылки
+                                prompt("Скопируйте ссылку для вашего VPN клиента:", keyData.url);
+                            }
+                        }, 2000);
+                    } else {
+                        mainError.innerText = "Ошибка получения ключа: " + (keyData.error || "неизвестная");
+                    }
+                }
+            } catch (e) {
+                mainError.innerText = "Ошибка сети: " + e.message;
+            } finally {
+                connectBtn.disabled = false;
+                connectBtn.innerHTML = statusText.classList.contains('status-active') ? "Подключить VPN" : "Купить подписку";
+            }
+        });
+
+        // --- SERVICE WORKER REG ---
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    }).catch((error) => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            }
+        }
+    </script>
+</body>
+</html>
