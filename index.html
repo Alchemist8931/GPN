@@ -297,6 +297,10 @@
 
         signupBtn.addEventListener('click', async () => {
             authError.innerText = "";
+
+            console.log("Email:", emailInput.value);
+            console.log("Pass:", passInput.value);
+            
             signupBtn.disabled = true;
             signupBtn.innerHTML = '<span class="loader"></span> Регистрация...';
 
