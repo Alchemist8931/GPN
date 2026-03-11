@@ -6,11 +6,11 @@
     <meta name="theme-color" content="#1a1a2e">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="My VPN">
     <title>VPN Service</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2815/2815422.png">
     <style>
+        /* CSS (тот же, что и раньше) */
         :root { --bg-color: #1a1a2e; --card-bg: #16213e; --accent: #0f3460; --highlight: #e94560; --text: #eaeaea; --text-dim: #a0a0a0; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; align-items: center; justify-content: center; }
@@ -38,19 +38,21 @@
     </style>
 </head>
 <body>
+    <!-- Экран Авторизации -->
     <div id="auth-screen" class="container">
         <div class="auth-form">
             <div class="logo">🛡️</div>
             <h1>VPN Access</h1>
-            <p class="subtitle">Создайте аккаунт</p>
+            <p class="subtitle">Создайте аккаунт или войдите</p>
             <div id="auth-error" class="error-msg"></div>
             <input type="email" id="email-input" placeholder="Email" autocomplete="email">
-            <input type="password" id="pass-input" placeholder="Пароль" autocomplete="new-password">
+            <input type="password" id="pass-input" placeholder="Пароль" autocomplete="current-password">
             <button id="signup-btn">Создать аккаунт</button>
-            <button id="login-btn" class="secondary">Уже есть аккаунт? Войти</button>
+            <button id="login-btn" class="secondary">Войти</button>
         </div>
     </div>
 
+    <!-- Главный экран -->
     <div id="main-screen" class="container hidden">
         <div class="main-screen">
             <div class="logo">🔑</div>
@@ -65,16 +67,11 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        const SUPABASE_URL = 'https://ncdwlmgwljjwpuawlssr.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZHdsbWd3bGpqd3B1YXdsc3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NTQxNDksImV4cCI6MjA4MzAzMDE0OX0.rrIznUflWydylTnUZvOxOkeF9eMp91qNN4Bjq2gXRL8';
-        const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/vpn-api`;
-
-        const { createClient } = window.supabase;
-        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // Elements
+        // КОНФИГ
+        const FUNCTION_URL = 'https://ncdwlmgwljjwpuawlssr.supabase.co/functions/v1/vpn-api';
+        
+        // Элементы
         const authScreen = document.getElementById('auth-screen');
         const mainScreen = document.getElementById('main-screen');
         const emailInput = document.getElementById('email-input');
@@ -87,92 +84,107 @@
         const authError = document.getElementById('auth-error');
         const mainError = document.getElementById('main-error');
 
+        // Утилиты
+        const getToken = () => localStorage.getItem('vpn_token');
+        const setToken = (t) => localStorage.setItem('vpn_token', t);
+        const clearToken = () => localStorage.removeItem('vpn_token');
+
+        // API запрос
+        async function api(endpoint, method = 'GET', body = null) {
+            const headers = { 'Content-Type': 'application/json' };
+            if (getToken()) headers['Authorization'] = `Bearer ${getToken()}`;
+            
+            const res = await fetch(`${FUNCTION_URL}${endpoint}`, {
+                method,
+                headers,
+                body: body ? JSON.stringify(body) : null
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Server error");
+            return data;
+        }
+
+        // Инициализация
         document.addEventListener('DOMContentLoaded', () => {
-            initApp();
+            if (getToken()) {
+                checkSession();
+            } else {
+                showAuth();
+            }
             registerServiceWorker();
         });
 
-        async function initApp() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            updateUI(!!session);
-
-            supabaseClient.auth.onAuthStateChange((event, session) => {
-                updateUI(!!session);
-                // Немного ждем перед запросом статуса, чтобы триггер успел отработать
-                if (session) setTimeout(() => fetchStatus(), 500);
-            });
+        function showAuth() {
+            authScreen.classList.remove('hidden');
+            mainScreen.classList.add('hidden');
         }
 
-        function updateUI(isLoggedIn) {
-            if (isLoggedIn) {
-                authScreen.classList.add('hidden');
-                mainScreen.classList.remove('hidden');
-            } else {
-                authScreen.classList.remove('hidden');
-                mainScreen.classList.add('hidden');
+        function showMain() {
+            authScreen.classList.add('hidden');
+            mainScreen.classList.remove('hidden');
+            fetchStatus();
+        }
+
+        async function checkSession() {
+            try {
+                await api('/status');
+                showMain();
+            } catch (e) {
+                clearToken();
+                showAuth();
             }
         }
 
-        async function getAccessToken() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            return session ? session.access_token : null;
-        }
-
-        // --- REGISTRATION ---
+        // РЕГИСТРАЦИЯ
         signupBtn.addEventListener('click', async () => {
             authError.innerText = "";
             signupBtn.disabled = true;
             signupBtn.innerHTML = '<span class="loader"></span> Регистрация...';
 
-            const { data: { user, session }, error } = await supabaseClient.auth.signUp({
-                email: emailInput.value,
-                password: passInput.value,
-            });
-
-            if (error) {
-                authError.innerText = error.message;
+            try {
+                // 1. Регистрируем
+                await api('/register', 'POST', { email: emailInput.value, password: passInput.value });
+                
+                // 2. Сразу входим
+                const loginData = await api('/login', 'POST', { email: emailInput.value, password: passInput.value });
+                setToken(loginData.token);
+                
+                showMain();
+            } catch (e) {
+                authError.innerText = e.message;
+            } finally {
                 signupBtn.disabled = false;
                 signupBtn.innerHTML = "Создать аккаунт";
-                return;
             }
-
-            // Если email confirmation включен - сессии не будет
-            if (!session) {
-                authError.innerText = "✅ Проверьте почту для подтверждения.";
-                authError.style.color = "#4caf50";
-            } else {
-                // Сессия есть - автоматический вход, UI переключится сам
-            }
-            
-            signupBtn.disabled = false;
-            signupBtn.innerHTML = "Создать аккаунт";
         });
 
-        // --- LOGIN ---
+        // ВХОД
         loginBtn.addEventListener('click', async () => {
             authError.innerText = "";
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<span class="loader"></span> Вход...';
-            const { error } = await supabaseClient.auth.signInWithPassword({
-                email: emailInput.value,
-                password: passInput.value,
-            });
-            if (error) authError.innerText = error.message;
-            loginBtn.disabled = false;
-            loginBtn.innerText = "Войти";
-        });
-
-        logoutBtn.addEventListener('click', async () => {
-            await supabaseClient.auth.signOut();
-        });
-
-        // --- STATUS ---
-        async function fetchStatus() {
-            const token = await getAccessToken();
-            if (!token) return;
             try {
-                const res = await fetch(`${FUNCTION_URL}/status`, { headers: { Authorization: `Bearer ${token}` } });
-                const data = await res.json();
+                const data = await api('/login', 'POST', { email: emailInput.value, password: passInput.value });
+                setToken(data.token);
+                showMain();
+            } catch (e) {
+                authError.innerText = e.message;
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerText = "Войти";
+            }
+        });
+
+        // ВЫХОД
+        logoutBtn.addEventListener('click', () => {
+            clearToken();
+            showAuth();
+        });
+
+        // СТАТУС
+        async function fetchStatus() {
+            try {
+                const data = await api('/status');
                 if (data.active) {
                     const date = new Date(data.paid_until * 1000).toLocaleDateString('ru-RU');
                     statusText.innerText = `Активна до ${date}`;
@@ -185,49 +197,41 @@
                     connectBtn.classList.add('inactive');
                     connectBtn.innerText = "Купить подписку";
                 }
-            } catch (e) { statusText.innerText = "Ошибка сети"; }
+            } catch (e) {
+                statusText.innerText = "Ошибка";
+                if (e.message.includes("Unauthorized")) {
+                    clearToken();
+                    showAuth();
+                }
+            }
         }
 
-        // --- MAIN BUTTON ACTION ---
+        // ГЛАВНАЯ КНОПКА
         connectBtn.addEventListener('click', async () => {
             mainError.innerText = "";
-            const token = await getAccessToken();
             connectBtn.disabled = true;
             connectBtn.innerHTML = '<span class="loader"></span> Обработка...';
 
             try {
-                const statusRes = await fetch(`${FUNCTION_URL}/status`, { headers: { Authorization: `Bearer ${token}` } });
-                const statusData = await statusRes.json();
-
+                const statusData = await api('/status');
+                
                 if (!statusData.active) {
                     // ПОКУПКА
-                    connectBtn.innerHTML = '<span class="loader"></span> Активация...';
-                    const buyRes = await fetch(`${FUNCTION_URL}/create-subscription`, {
-                        method: 'POST',
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    const buyData = await buyRes.json();
-                    
+                    const buyData = await api('/create-subscription', 'POST');
                     if (buyData.success) {
                         await fetchStatus();
-                        mainError.innerText = "✅ Подписка активирована! Нажмите еще раз для подключения.";
+                        mainError.innerText = "✅ Подписка активирована! Нажмите еще раз.";
                         mainError.style.color = "#4caf50";
-                    } else {
-                        throw new Error(buyData.error || "Ошибка активации");
                     }
                 } else {
                     // ПОДКЛЮЧЕНИЕ
-                    const keyRes = await fetch(`${FUNCTION_URL}/get-key`, { headers: { Authorization: `Bearer ${token}` } });
-                    const keyData = await keyRes.json();
-                    
+                    const keyData = await api('/get-key');
                     if (keyData.url) {
                         const deepLink = `streisand://import?url=${encodeURIComponent(keyData.url)}`;
                         window.location.href = deepLink;
                         setTimeout(() => {
                             if (document.hasFocus()) prompt("Скопируйте ссылку:", keyData.url);
                         }, 2000);
-                    } else {
-                        throw new Error("Не удалось получить ключ");
                     }
                 }
             } catch (e) {
