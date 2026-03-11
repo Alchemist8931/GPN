@@ -7,175 +7,66 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="My VPN">
-    
     <title>VPN Service</title>
-    
-    <!-- Manifest для PWA -->
     <link rel="manifest" href="manifest.json">
-    
-    <!-- Иконки для iOS -->
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2815/2815422.png">
     
     <style>
-        /* --- CSS STYLES --- */
+        /* --- CSS STYLES (Без изменений) --- */
         :root {
-            --bg-color: #1a1a2e;
-            --card-bg: #16213e;
-            --accent: #0f3460;
-            --highlight: #e94560;
-            --text: #eaeaea;
-            --text-dim: #a0a0a0;
+            --bg-color: #1a1a2e; --card-bg: #16213e; --accent: #0f3460;
+            --highlight: #e94560; --text: #eaeaea; --text-dim: #a0a0a0;
         }
-
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            align-items: center;
-            justify-content: center;
+            margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color); color: var(--text);
+            display: flex; flex-direction: column; min-height: 100vh;
+            align-items: center; justify-content: center;
         }
-
-        .container {
-            width: 100%;
-            max-width: 400px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .logo {
-            font-size: 48px;
-            margin-bottom: 10px;
-        }
-
-        h1 {
-            margin: 0 0 10px 0;
-            font-weight: 600;
-        }
-
-        p.subtitle {
-            color: var(--text-dim);
-            margin-bottom: 30px;
-        }
-
-        /* Forms */
+        .container { width: 100%; max-width: 400px; padding: 20px; text-align: center; }
+        .logo { font-size: 48px; margin-bottom: 10px; }
+        h1 { margin: 0 0 10px 0; font-weight: 600; }
+        p.subtitle { color: var(--text-dim); margin-bottom: 30px; }
         .auth-form, .main-screen {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 16px;
+            background: var(--card-bg); padding: 25px; border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
-
         input {
-            width: 100%;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid var(--accent);
-            background: var(--bg-color);
-            color: var(--text);
-            border-radius: 8px;
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.2s;
+            width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid var(--accent);
+            background: var(--bg-color); color: var(--text); border-radius: 8px;
+            font-size: 16px; outline: none; transition: border-color 0.2s;
         }
-
-        input:focus {
-            border-color: var(--highlight);
-        }
-
+        input:focus { border-color: var(--highlight); }
         button {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            background: var(--highlight);
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s, transform 0.1s;
+            width: 100%; padding: 15px; border: none; border-radius: 8px;
+            background: var(--highlight); color: white; font-size: 16px;
+            font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.1s;
         }
-
-        button:active {
-            transform: scale(0.98);
-        }
-
-        button.secondary {
-            background: var(--accent);
-            margin-top: 10px;
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        /* Dashboard Elements */
+        button:active { transform: scale(0.98); }
+        button.secondary { background: var(--accent); margin-top: 10px; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
         .status-card {
-            background: var(--accent);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: var(--accent); padding: 15px; border-radius: 10px;
+            margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;
         }
-
-        .status-label {
-            font-size: 14px;
-            color: var(--text-dim);
-        }
-
-        .status-value {
-            font-weight: bold;
-            font-size: 16px;
-        }
-
+        .status-label { font-size: 14px; color: var(--text-dim); }
+        .status-value { font-weight: bold; font-size: 16px; }
         .status-active { color: #4caf50; }
         .status-inactive { color: #f44336; }
-
         .connect-btn {
-            font-size: 18px;
-            padding: 20px;
-            background: linear-gradient(135deg, #4caf50, #2e7d32);
-            margin-bottom: 15px;
+            font-size: 18px; padding: 20px;
+            background: linear-gradient(135deg, #4caf50, #2e7d32); margin-bottom: 15px;
         }
-        
-        .connect-btn.inactive {
-             background: linear-gradient(135deg, #555, #333);
-        }
-
+        .connect-btn.inactive { background: linear-gradient(135deg, #555, #333); }
         .hidden { display: none; }
-
-        .error-msg {
-            color: var(--highlight);
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-
-        /* Loader */
+        .error-msg { color: var(--highlight); margin-bottom: 15px; font-size: 14px; }
         .loader {
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top: 3px solid var(--highlight);
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-right: 10px;
-            vertical-align: middle;
+            border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--highlight);
+            border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite;
+            display: inline-block; margin-right: 10px; vertical-align: middle;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
     </style>
 </head>
 <body>
@@ -186,12 +77,9 @@
             <div class="logo">🛡️</div>
             <h1>VPN Access</h1>
             <p class="subtitle">Войдите или зарегистрируйтесь</p>
-            
             <div id="auth-error" class="error-msg"></div>
-            
             <input type="email" id="email-input" placeholder="Email" autocomplete="email">
             <input type="password" id="pass-input" placeholder="Пароль" autocomplete="current-password">
-            
             <button id="login-btn">Войти</button>
             <button id="signup-btn" class="secondary">Регистрация</button>
         </div>
@@ -202,19 +90,12 @@
         <div class="main-screen">
             <div class="logo">🔑</div>
             <h1>Ваш VPN</h1>
-            
             <div class="status-card">
                 <span class="status-label">Статус подписки:</span>
                 <span id="status-text" class="status-value">Проверка...</span>
             </div>
-
-            <!-- Кнопка "Одна кнопка" -->
-            <button id="connect-btn" class="connect-btn">
-                Подключить VPN
-            </button>
-
+            <button id="connect-btn" class="connect-btn">Подключить VPN</button>
             <div id="main-error" class="error-msg"></div>
-
             <button id="logout-btn" class="secondary">Выйти</button>
         </div>
     </div>
@@ -225,12 +106,9 @@
         // --- CONFIG ---
         const SUPABASE_URL = 'https://ncdwlmgwljjwpuawlssr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZHdsbWd3bGpqd3B1YXdsc3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NTQxNDksImV4cCI6MjA4MzAzMDE0OX0.rrIznUflWydylTnUZvOxOkeF9eMp91qNN4Bjq2gXRL8';
-
-        // URL вашей Edge Function
         const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/vpn-api`;
 
         // --- INIT SUPABASE ---
-        // ИСПРАВЛЕНИЕ: Переименовали переменную в supabaseClient, чтобы избежать конфликта имен
         const { createClient } = window.supabase;
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -255,21 +133,55 @@
         });
 
         async function initApp() {
-            // Используем supabaseClient
             const { data: { session } } = await supabaseClient.auth.getSession();
             updateUI(!!session);
 
-            supabaseClient.auth.onAuthStateChange((event, session) => {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 updateUI(!!session);
+                
+                // АВТОМАТИЧЕСКОЕ СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ
+                // Если пользователь только что вошел (SIGNED_IN) и у нас есть сессия
+                if (event === 'SIGNED_IN' && session) {
+                    await autoProvisionUser(session.access_token);
+                }
+                
                 if (session) fetchStatus();
             });
+        }
+
+        // Функция автоматического создания пользователя (если его нет)
+        async function autoProvisionUser(token) {
+            try {
+                // Сначала проверяем статус
+                const res = await fetch(`${FUNCTION_URL}/status`, { 
+                    headers: { Authorization: `Bearer ${token}` } 
+                });
+                const data = await res.json();
+
+                // Если статус не активен (или пользователя нет), создаем подписку
+                // В вашем API статус "active: false" возвращается и для новых пользователей
+                if (!data.active) {
+                    console.log("Пользователь новый, создаем VPN подписку...");
+                    const createRes = await fetch(`${FUNCTION_URL}/create-subscription`, {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const result = await createRes.json();
+                    if (result.success) {
+                        console.log("VPN подписка успешно создана!");
+                    } else {
+                        console.error("Ошибка авто-создания:", result.error);
+                    }
+                }
+            } catch (e) {
+                console.error("Ошибка при авто-создании:", e);
+            }
         }
 
         function updateUI(isLoggedIn) {
             if (isLoggedIn) {
                 authScreen.classList.add('hidden');
                 mainScreen.classList.remove('hidden');
-                fetchStatus();
             } else {
                 authScreen.classList.remove('hidden');
                 mainScreen.classList.add('hidden');
@@ -283,7 +195,6 @@
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<span class="loader"></span> Вход...';
 
-            // Используем supabaseClient
             const { error } = await supabaseClient.auth.signInWithPassword({
                 email: emailInput.value,
                 password: passInput.value,
@@ -297,14 +208,9 @@
 
         signupBtn.addEventListener('click', async () => {
             authError.innerText = "";
-
-            console.log("Email:", emailInput.value);
-            console.log("Pass:", passInput.value);
-            
             signupBtn.disabled = true;
             signupBtn.innerHTML = '<span class="loader"></span> Регистрация...';
 
-            // Используем supabaseClient
             const { error } = await supabaseClient.auth.signUp({
                 email: emailInput.value,
                 password: passInput.value,
@@ -359,7 +265,7 @@
             }
         }
 
-        // Обработка "Одной кнопки"
+        // Обработка кнопки
         connectBtn.addEventListener('click', async () => {
             mainError.innerText = "";
             const token = await getAccessToken();
@@ -368,14 +274,14 @@
             connectBtn.innerHTML = '<span class="loader"></span> Обработка...';
 
             try {
-                // 1. Получаем текущий статус
+                // Проверяем статус
                 const statusRes = await fetch(`${FUNCTION_URL}/status`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const statusData = await statusRes.json();
 
                 if (!statusData.active) {
-                    // 2. Если не активна, покупаем
+                    // Если все еще не активна -> Покупаем
                     const buyRes = await fetch(`${FUNCTION_URL}/create-subscription`, {
                         method: 'POST',
                         headers: { Authorization: `Bearer ${token}` }
@@ -390,7 +296,7 @@
                         mainError.innerText = "Ошибка оплаты: " + (buyData.error || "неизвестная");
                     }
                 } else {
-                    // 3. Если активна, получаем ключ
+                    // Если активна -> Получаем ключ
                     const keyRes = await fetch(`${FUNCTION_URL}/get-key`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
@@ -424,11 +330,8 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js')
-                    .then((registration) => {
-                        console.log('Service Worker registered with scope:', registration.scope);
-                    }).catch((error) => {
-                        console.error('Service Worker registration failed:', error);
-                    });
+                    .then((registration) => console.log('SW registered:', registration.scope))
+                    .catch((error) => console.error('SW failed:', error));
             }
         }
     </script>
