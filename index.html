@@ -13,7 +13,7 @@
     <!-- Manifest для PWA -->
     <link rel="manifest" href="manifest.json">
     
-    <!-- Иконки для iOS (нужно добавить свои изображения в репозиторий или использовать заглушки) -->
+    <!-- Иконки для iOS -->
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2815/2815422.png">
     
     <style>
@@ -223,16 +223,16 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // --- CONFIG ---
-        // ВАЖНО: Замените эти значения на свои из Supabase Settings -> API
         const SUPABASE_URL = 'https://ncdwlmgwljjwpuawlssr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZHdsbWd3bGpqd3B1YXdsc3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NTQxNDksImV4cCI6MjA4MzAzMDE0OX0.rrIznUflWydylTnUZvOxOkeF9eMp91qNN4Bjq2gXRL8';
 
-        // URL вашей Edge Function (замените YOUR_PROJECT_REF)
+        // URL вашей Edge Function
         const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/vpn-api`;
 
         // --- INIT SUPABASE ---
+        // ИСПРАВЛЕНИЕ: Переименовали переменную в supabaseClient, чтобы избежать конфликта имен
         const { createClient } = window.supabase;
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // --- ELEMENTS ---
         const authScreen = document.getElementById('auth-screen');
@@ -249,18 +249,17 @@
 
         // --- APP LOGIC ---
 
-        // Проверка сессии при загрузке
         document.addEventListener('DOMContentLoaded', () => {
             initApp();
             registerServiceWorker();
         });
 
         async function initApp() {
-            const { data: { session } } = await supabase.auth.getSession();
+            // Используем supabaseClient
+            const { data: { session } } = await supabaseClient.auth.getSession();
             updateUI(!!session);
 
-            // Слушатель изменений авторизации
-            supabase.auth.onAuthStateChange((event, session) => {
+            supabaseClient.auth.onAuthStateChange((event, session) => {
                 updateUI(!!session);
                 if (session) fetchStatus();
             });
@@ -284,7 +283,8 @@
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<span class="loader"></span> Вход...';
 
-            const { error } = await supabase.auth.signInWithPassword({
+            // Используем supabaseClient
+            const { error } = await supabaseClient.auth.signInWithPassword({
                 email: emailInput.value,
                 password: passInput.value,
             });
@@ -300,7 +300,8 @@
             signupBtn.disabled = true;
             signupBtn.innerHTML = '<span class="loader"></span> Регистрация...';
 
-            const { error } = await supabase.auth.signUp({
+            // Используем supabaseClient
+            const { error } = await supabaseClient.auth.signUp({
                 email: emailInput.value,
                 password: passInput.value,
             });
@@ -317,13 +318,13 @@
         });
 
         logoutBtn.addEventListener('click', async () => {
-            await supabase.auth.signOut();
+            await supabaseClient.auth.signOut();
         });
 
         // --- VPN LOGIC ---
 
         async function getAccessToken() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseClient.auth.getSession();
             return session ? session.access_token : null;
         }
 
@@ -347,7 +348,7 @@
                     statusText.innerText = "Не активна";
                     statusText.className = "status-value status-inactive";
                     connectBtn.classList.add('inactive');
-                    connectBtn.innerText = "Купить подписку"; // Меняем текст кнопки
+                    connectBtn.innerText = "Купить подписку";
                 }
             } catch (e) {
                 statusText.innerText = "Ошибка сети";
@@ -362,10 +363,6 @@
             connectBtn.disabled = true;
             connectBtn.innerHTML = '<span class="loader"></span> Обработка...';
 
-            // Логика:
-            // Если статус не активен -> Пробуем создать подписку (Mock оплата)
-            // Если статус активен -> Получаем ключ и редиректим
-            
             try {
                 // 1. Получаем текущий статус
                 const statusRes = await fetch(`${FUNCTION_URL}/status`, {
@@ -374,8 +371,7 @@
                 const statusData = await statusRes.json();
 
                 if (!statusData.active) {
-                    // 2. Если не активна, покупаем (в демо режиме создаем автоматом)
-                    // В реальном проекте здесь открылся бы виджет оплаты ЮКасса/Stripe
+                    // 2. Если не активна, покупаем
                     const buyRes = await fetch(`${FUNCTION_URL}/create-subscription`, {
                         method: 'POST',
                         headers: { Authorization: `Bearer ${token}` }
@@ -383,7 +379,7 @@
                     const buyData = await buyRes.json();
 
                     if (buyData.success) {
-                        await fetchStatus(); // Обновляем UI
+                        await fetchStatus(); 
                         mainError.innerText = "✅ Подписка оформлена! Нажмите еще раз для подключения.";
                         mainError.style.color = "#4caf50";
                     } else {
@@ -397,28 +393,14 @@
                     const keyData = await keyRes.json();
 
                     if (keyData.url) {
-                        // МЕХАНИКА ОДНОЙ КНОПКИ
-                        // Пробуем открыть через схему Streisand (или другую)
-                        // Ссылка вида: streisand://import?url=...
-                        
                         const encodedUrl = encodeURIComponent(keyData.url);
-                        
-                        // Попытка открыть в приложении Streisand (iOS/Android)
-                        // Если приложение не установлено, браузер останется на странице или перейдет в App Store (если настроено)
                         const deepLink = `streisand://import?url=${encodedUrl}`;
                         
-                        // Для V2Box: v2box://import?url=...
-                        // Для Sing-box: sing-box://import-url?url=...
-                        
-                        // Открываем ссылку
-                        // В PWA window.location.href работает надежнее window.open
                         window.location.href = deepLink;
                         
-                        // На всякий случай показываем ссылку текстом, если редирект не сработал
                         setTimeout(() => {
                             if (document.hasFocus()) {
                                 mainError.innerText = "Если приложение не открылось, скопируйте ссылку вручную.";
-                                // Можно показать модалку с текстом ссылки
                                 prompt("Скопируйте ссылку для вашего VPN клиента:", keyData.url);
                             }
                         }, 2000);
