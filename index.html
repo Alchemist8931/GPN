@@ -228,7 +228,7 @@
     // ==========================================
     // CONFIGURATION & VERSIONING
     // ==========================================
-    const APP_VERSION = "1.0.5"; // Обновлено для исправления 401
+    const APP_VERSION = "1.0.6"; // Fixed 401 via proper headers & Supabase settings instructions
     const SUPABASE_URL = 'https://ncdwlmgwljjwpuawlssr.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZHdsbWd3bGpqd3B1YXdsc3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NTQxNDksImV4cCI6MjA4MzAzMDE0OX0.rrIznUflWydylTnUZvOxOkeF9eMp91qNN4Bjq2gXRL8';
     
@@ -254,14 +254,14 @@
       }
     }, 2000);
 
-    // Инициализация Supabase с отключением сессий (чтобы не было ошибки Refresh Token)
+    // Инициализация Supabase с отключением сессий
     try {
       if (typeof window.supabase !== 'undefined') {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
-            persistSession: false, // Не сохранять сессию в localStorage
-            autoRefreshToken: false, // Не обновлять токен
-            detectSessionInUrl: false // Не искать сессию в URL
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false
           }
         });
         console.log("Supabase initialized (No Session Mode).");
@@ -286,16 +286,32 @@
     // HELPER: API CALL WITH AUTH HEADERS
     // ==========================================
     async function apiCall(action, payload) {
+      // ВАЖНО: Заголовки apikey и Authorization обязательны для вызова Edge Functions
       const res = await fetch(FUNCTION_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,        // Обязательный заголовок для Supabase Edge Functions
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}` // Тоже часто требуется
+          'apikey': SUPABASE_ANON_KEY,        
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}` 
         },
         body: JSON.stringify({ action, payload })
       });
-      return res.json();
+      
+      // Пытаемся распарсить JSON, если возможно
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (e) {
+        // Если сервер вернул не JSON (например, HTML ошибки), создаем свою ошибку
+        throw new Error(`Server returned status ${res.status}`);
+      }
+
+      if (!res.ok) {
+        // Если есть сообщение об ошибке от нашей функции
+        throw new Error(data.error || `HTTP Error ${res.status}`);
+      }
+      
+      return data;
     }
 
     // ==========================================
@@ -316,8 +332,7 @@
         const data = await apiCall('register', { email });
         console.log("Register response:", data);
 
-        if(data.error) throw new Error(data.error);
-
+        // Если мы здесь, значит ошибок нет
         document.getElementById('loginEmail').value = email;
         document.getElementById('loginPass').value = data.password;
         
@@ -351,8 +366,6 @@
       try {
         const data = await apiCall('login', { email, password: pass });
         console.log("Login response:", data);
-
-        if(data.error) throw new Error(data.error);
 
         currentUser = data.user;
         showApp();
@@ -438,8 +451,6 @@
       try {
         const data = await apiCall('buy', { userId: currentUser.id });
         console.log("Buy response:", data);
-
-        if(data.error) throw new Error(data.error);
 
         currentUser.paid_until = data.newPaidUntil;
         currentUser.sub_id = data.subUrl ? data.subUrl.split('/').pop() : currentUser.sub_id;
