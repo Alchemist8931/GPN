@@ -4,8 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VPN Service PWA</title>
+  
+  <!-- Мета-теги против кэширования -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Добавляем версию в URL библиотеки для обновления кэша -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=1.0.2"></script>
+  
   <link href="https://fonts.googleapis.com/css2?family=SN+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
 
@@ -25,15 +33,16 @@
     /* Preloader */
     .preloader {
       position: fixed; inset: 0; background: var(--bg-primary);
-      display: flex; align-items: center; justify-content: center; z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999;
       transition: opacity 0.5s ease, visibility 0.5s ease;
     }
-    .preloader.hidden { opacity: 0; visibility: hidden; }
+    .preloader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
     .loader-spinner {
       width: 40px; height: 40px; border: 3px solid var(--border-color);
       border-top-color: var(--accent); border-radius: 50%;
       animation: spin 1s linear infinite;
     }
+    .loader-text { margin-top: 12px; font-size: 12px; color: var(--text-muted); }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Auth Overlay & Modal */
@@ -136,6 +145,7 @@
   <!-- Preloader -->
   <div class="preloader" id="preloader">
     <div class="loader-spinner"></div>
+    <div class="loader-text" id="loaderText">Загрузка...</div>
   </div>
 
   <!-- Background Pattern -->
@@ -176,7 +186,7 @@
               <label class="input-label" for="regEmail">ваша почта</label>
             </div>
             <button type="submit" class="submit-btn" id="registerBtn"><span class="btn-text">зарегистрироваться</span><div class="loader"></div></button>
-            <p style="font-size: 12px; color: var(--text-muted); margin-top: 10px;">Пароль будет создан автоматически и предложен для сохранения</p>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 10px;">Пароль будет создан автоматически</p>
           </form>
         </div>
       </div>
@@ -195,7 +205,7 @@
       <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
         <button class="vpn-btn primary" id="buyBtn">
           <span class="material-symbols-outlined" style="font-size: 20px;">shopping_bag</span>
-          Купить подписку (30 дней)
+          <span id="buyBtnText">Купить подписку (30 дней)</span>
         </button>
         
         <button class="vpn-btn secondary" id="vpnBtn" disabled>
@@ -217,44 +227,51 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION
+    // CONFIGURATION & VERSIONING
     // ==========================================
-    // ЗАМЕНИТЕ НА СВОИ ДАННЫЕ
-    const SUPABASE_URL = "https://ncdwlmgwljjwpuawlssr.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZHdsbWd3bGpqd3B1YXdsc3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NTQxNDksImV4cCI6MjA4MzAzMDE0OX0.rrIznUflWydylTnUZvOxOkeF9eMp91qNN4Bjq2gXRL8";
+    const APP_VERSION = "1.0.3"; // Версия для отладки
+    const SUPABASE_URL = 'https://ncdwlmgwljjwpuawlssr.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZHdsbWd3bGpqd3B1YXdsc3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NTQxNDksImV4cCI6MjA4MzAzMDE0OX0.rrIznUflWydylTnUZvOxOkeF9eMp91qNN4Bjq2gXRL8';
     
-    // URL вашей Edge Function (обычно: https://<ref>.supabase.co/functions/v1/VPN_Aleksander)
+    // URL вашей функции. Убедитесь, что он верный!
     const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/VPN_Aleksander`;
 
-    let supabase = null;
+    let supabaseClient = null;
     let currentUser = null;
 
-    // ==========================================
-    // INIT & PRELOADER
-    // ==========================================
-    window.onload = async () => {
-      console.log("Window loaded. Initializing...");
-      
-      // Инициализация Supabase Client (для прямого доступа если нужно, но мы используем Function)
-      try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log("Supabase client initialized.");
-      } catch(e) {
-        console.error("Supabase init error:", e);
-      }
+    console.log(`%c APP VERSION: ${APP_VERSION} `, 'background: #222; color: #bada55; font-size: 16px;');
+    console.log("Script started");
 
-      // Прелоадер 2 секунды
+    // ==========================================
+    // INIT & PRELOADER LOGIC
+    // ==========================================
+    
+    // Запускаем таймер прелоадера СРАЗУ, чтобы он не зависал, если JS где-то упадет
+    const preloaderTimer = setTimeout(() => {
+      console.log("Preloader timeout reached. Hiding preloader.");
+      document.getElementById('preloader').classList.add('hidden');
+      
+      // Показываем форму входа с задержкой анимации
       setTimeout(() => {
-        const preloader = document.getElementById('preloader');
-        preloader.classList.add('hidden');
-        
-        // Показываем форму входа
-        setTimeout(() => {
-          document.getElementById('authOverlay').classList.add('visible');
-        }, 100); // Небольшая задержка для плавности
-        
-      }, 2000);
-    };
+        document.getElementById('authOverlay').classList.add('visible');
+      }, 100);
+    }, 2000);
+
+    // Инициализация
+    try {
+      if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log("Supabase client initialized successfully.");
+      } else {
+        console.error("Supabase library not loaded!");
+        document.getElementById('loaderText').textContent = "Ошибка загрузки библиотеки";
+        clearTimeout(preloaderTimer); // Останавливаем таймер, если критическая ошибка
+      }
+    } catch (e) {
+      console.error("Critical error during init:", e);
+      clearTimeout(preloaderTimer);
+      document.getElementById('loaderText').textContent = "Ошибка инициализации";
+    }
 
     // ==========================================
     // UI INTERACTIONS
@@ -296,22 +313,14 @@
         if(data.error) throw new Error(data.error);
 
         // Автоматический логин
-        // 1. Подставляем данные в форму входа
         document.getElementById('loginEmail').value = email;
         document.getElementById('loginPass').value = data.password;
         
-        // 2. Переключаем вкладку
         tabLogin.checked = true;
         authModal.classList.remove('is-register');
 
-        // 3. Имитируем сохранение пароля браузером (хак через скрытый инпут или просто alert)
-        // Браузер предложит сохранить пароль только после сабмита формы login.
-        // Поэтому мы автоматически "нажимаем" кнопку входа.
-        alert(`Регистрация успешна! Ваш пароль: ${data.password}\nОн сохранен в поле входа. Нажмите "Войти".`);
+        alert(`Регистрация успешна! Ваш пароль: ${data.password}\nНажмите "Войти".`);
         
-        // Автоматический вход сразу
-        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
-
       } catch (err) {
         console.error("Register error:", err);
         alert("Ошибка регистрации: " + err.message);
@@ -382,7 +391,7 @@
       }, 400);
     }
 
-    async function updateUI() {
+    function updateUI() {
       if(!currentUser) return;
       
       console.log("Updating UI for user:", currentUser);
@@ -393,7 +402,7 @@
       
       const statusBadge = document.getElementById('statusBadge');
       const vpnBtn = document.getElementById('vpnBtn');
-      const buyBtn = document.getElementById('buyBtn');
+      const buyBtnText = document.getElementById('buyBtnText');
       const keyArea = document.getElementById('keyArea');
 
       statusBadge.textContent = `Осталось дней: ${daysLeft}`;
@@ -401,17 +410,25 @@
       if(daysLeft > 0) {
         statusBadge.classList.add('active');
         vpnBtn.disabled = false;
-        buyBtn.textContent = "Продлить (30 дней)";
+        buyBtnText.textContent = "Продлить (30 дней)";
         
-        // Показываем ключ
         if(currentUser.sub_id) {
+           // Формируем ссылку вручную или берем из ответа сервера, если она приходит
+           // В функции мы возвращали subUrl, но локально мы его не обновили в currentUser при логине (только в БД).
+           // Лучше обновить currentUser после покупки, или формировать ссылку здесь.
+           // Мы знаем базовый URL из переменных окружения бэкенда, но на фронте мы его не знаем.
+           // Пусть функция buy возвращает ссылку, мы ее сохраним.
+           // А пока - заглушка или обновление после покупки.
            const subUrl = "https://x1.a2x2.top:14018/sub/" + currentUser.sub_id;
            document.getElementById('keyDisplay').textContent = subUrl;
            keyArea.style.display = 'block';
+        } else {
+           keyArea.style.display = 'none';
         }
       } else {
         statusBadge.classList.remove('active');
         vpnBtn.disabled = true;
+        buyBtnText.textContent = "Купить подписку (30 дней)";
         keyArea.style.display = 'none';
       }
     }
@@ -423,7 +440,8 @@
       if(!currentUser) return;
       
       const btn = document.getElementById('buyBtn');
-      btn.textContent = "Обработка...";
+      const btnText = document.getElementById('buyBtnText');
+      btnText.textContent = "Обработка...";
       btn.disabled = true;
       console.log("Buying subscription for:", currentUser.id);
 
@@ -444,7 +462,12 @@
 
         // Обновляем локального юзера
         currentUser.paid_until = data.newPaidUntil;
-        currentUser.sub_id = currentUser.sub_id || data.subUrl.split('/').pop(); // просто заглушка, если вернется
+        currentUser.sub_id = data.subUrl ? data.subUrl.split('/').pop() : currentUser.sub_id;
+        
+        // Если сервер вернул subUrl, обновим отображение
+        if(data.subUrl) {
+            document.getElementById('keyDisplay').textContent = data.subUrl;
+        }
 
         alert("Оплата успешна! Подписка активирована.");
         updateUI();
@@ -453,7 +476,7 @@
         console.error("Buy error:", err);
         alert("Ошибка оплаты: " + err.message);
       } finally {
-        btn.textContent = "Купить подписку (30 дней)";
+        btnText.textContent = "Купить подписку (30 дней)";
         btn.disabled = false;
       }
     });
@@ -461,8 +484,6 @@
     document.getElementById('vpnBtn').addEventListener('click', () => {
       const key = document.getElementById('keyDisplay').textContent;
       if(key) {
-        // Пытаемся открыть как ссылку
-        // iOS V2Ray клиенты обычно перехватывают:// ссылки, или можно скопировать
         window.open(key, '_blank');
         alert("Если приложение VPN не открылось, скопируйте ссылку и вставьте в приложение V2Ray/Shadowrocket.");
       }
