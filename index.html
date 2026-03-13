@@ -208,13 +208,13 @@
         </button>
         
         <button class="vpn-btn secondary" id="vpnBtn" disabled>
-          <span class="material-symbols-outlined" style="font-size: 20px;">key</span>
-          Включить VPN
+          <span class="material-symbols-outlined" style="font-size: 20px;">download</span>
+          <span>Включить VPN (Скачать)</span>
         </button>
       </div>
 
       <div id="keyArea" style="display: none; width: 100%;">
-        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Ваша ссылка для подписки (нажмите, чтобы скопировать):</p>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Ссылка для продвинутых пользователей:</p>
         <div class="key-display" id="keyDisplay" onclick="copyKey()"></div>
       </div>
 
@@ -228,7 +228,7 @@
     // ==========================================
     // CONFIGURATION & VERSIONING
     // ==========================================
-    const APP_VERSION = "1.0.6"; // Fixed 401 via proper headers & Supabase settings instructions
+    const APP_VERSION = "1.0.7"; // Added config download logic
     const SUPABASE_URL = 'https://ncdwlmgwljjwpuawlssr.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZHdsbWd3bGpqd3B1YXdsc3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NTQxNDksImV4cCI6MjA4MzAzMDE0OX0.rrIznUflWydylTnUZvOxOkeF9eMp91qNN4Bjq2gXRL8';
     
@@ -243,34 +243,20 @@
     // INIT & PRELOADER LOGIC
     // ==========================================
     
-    // Таймер скроет прелоадер через 2 секунды в любом случае
     setTimeout(() => {
       const preloader = document.getElementById('preloader');
       if (!preloader.classList.contains('hidden')) {
         preloader.classList.add('hidden');
-        setTimeout(() => {
-          document.getElementById('authOverlay').classList.add('visible');
-        }, 100);
+        setTimeout(() => { document.getElementById('authOverlay').classList.add('visible'); }, 100);
       }
     }, 2000);
 
-    // Инициализация Supabase с отключением сессий
     try {
       if (typeof window.supabase !== 'undefined') {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-            detectSessionInUrl: false
-          }
-        });
-        console.log("Supabase initialized (No Session Mode).");
-      } else {
-        console.error("Supabase library not found.");
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+        console.log("Supabase initialized.");
       }
-    } catch (e) {
-      console.error("Init error:", e);
-    }
+    } catch (e) { console.error("Init error:", e); }
 
     // ==========================================
     // UI INTERACTIONS
@@ -283,34 +269,17 @@
     tabRegister.addEventListener('change', () => { if(tabRegister.checked) authModal.classList.add('is-register'); });
 
     // ==========================================
-    // HELPER: API CALL WITH AUTH HEADERS
+    // HELPER: API CALL
     // ==========================================
     async function apiCall(action, payload) {
-      // ВАЖНО: Заголовки apikey и Authorization обязательны для вызова Edge Functions
       const res = await fetch(FUNCTION_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,        
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}` 
-        },
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
         body: JSON.stringify({ action, payload })
       });
-      
-      // Пытаемся распарсить JSON, если возможно
       let data = {};
-      try {
-        data = await res.json();
-      } catch (e) {
-        // Если сервер вернул не JSON (например, HTML ошибки), создаем свою ошибку
-        throw new Error(`Server returned status ${res.status}`);
-      }
-
-      if (!res.ok) {
-        // Если есть сообщение об ошибке от нашей функции
-        throw new Error(data.error || `HTTP Error ${res.status}`);
-      }
-      
+      try { data = await res.json(); } catch (e) { throw new Error(`Server error ${res.status}`); }
+      if (!res.ok) throw new Error(data.error || `HTTP Error ${res.status}`);
       return data;
     }
 
@@ -319,35 +288,19 @@
     // ==========================================
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      console.log("Register attempt...");
       const btn = document.getElementById('registerBtn');
       const email = document.getElementById('regEmail').value.trim();
-      
       if(!email) return alert("Введите почту");
       
-      btn.classList.add('loading');
-      btn.disabled = true;
-
+      btn.classList.add('loading'); btn.disabled = true;
       try {
         const data = await apiCall('register', { email });
-        console.log("Register response:", data);
-
-        // Если мы здесь, значит ошибок нет
         document.getElementById('loginEmail').value = email;
         document.getElementById('loginPass').value = data.password;
-        
-        tabLogin.checked = true;
-        authModal.classList.remove('is-register');
-
-        alert(`Регистрация успешна! Ваш пароль: ${data.password}\nНажмите "Войти".`);
-        
-      } catch (err) {
-        console.error("Register error:", err);
-        alert("Ошибка регистрации: " + err.message);
-      } finally {
-        btn.classList.remove('loading');
-        btn.disabled = false;
-      }
+        tabLogin.checked = true; authModal.classList.remove('is-register');
+        alert(`Регистрация успешна! Пароль: ${data.password}\nВойдите в систему.`);
+      } catch (err) { alert("Ошибка: " + err.message); } 
+      finally { btn.classList.remove('loading'); btn.disabled = false; }
     });
 
     // ==========================================
@@ -355,28 +308,17 @@
     // ==========================================
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      console.log("Login attempt...");
       const btn = document.getElementById('loginBtn');
       const email = document.getElementById('loginEmail').value.trim();
       const pass = document.getElementById('loginPass').value;
 
-      btn.classList.add('loading');
-      btn.disabled = true;
-
+      btn.classList.add('loading'); btn.disabled = true;
       try {
         const data = await apiCall('login', { email, password: pass });
-        console.log("Login response:", data);
-
         currentUser = data.user;
         showApp();
-
-      } catch (err) {
-        console.error("Login error:", err);
-        alert("Ошибка входа: " + err.message);
-      } finally {
-        btn.classList.remove('loading');
-        btn.disabled = false;
-      }
+      } catch (err) { alert("Ошибка входа: " + err.message); } 
+      finally { btn.classList.remove('loading'); btn.disabled = false; }
     });
 
     // ==========================================
@@ -384,27 +326,17 @@
     // ==========================================
     function showApp() {
       document.getElementById('authOverlay').classList.remove('visible');
-      setTimeout(() => {
-        document.getElementById('appContainer').classList.add('active');
-        updateUI();
-      }, 400);
+      setTimeout(() => { document.getElementById('appContainer').classList.add('active'); updateUI(); }, 400);
     }
 
     function logout() {
       currentUser = null;
       document.getElementById('appContainer').classList.remove('active');
-      document.getElementById('loginEmail').value = '';
-      document.getElementById('loginPass').value = '';
-      setTimeout(() => {
-        document.getElementById('authOverlay').classList.add('visible');
-      }, 400);
+      setTimeout(() => { document.getElementById('authOverlay').classList.add('visible'); }, 400);
     }
 
     function updateUI() {
       if(!currentUser) return;
-      
-      console.log("Updating UI for user:", currentUser);
-      
       const now = Math.floor(Date.now() / 1000);
       const paidUntil = currentUser.paid_until || 0;
       const daysLeft = Math.max(0, Math.ceil((paidUntil - now) / 86400));
@@ -421,12 +353,11 @@
         vpnBtn.disabled = false;
         buyBtnText.textContent = "Продлить (30 дней)";
         
+        // Показываем ссылку
         if(currentUser.sub_id) {
            const subUrl = "https://x1.a2x2.top:14018/sub/" + currentUser.sub_id;
            document.getElementById('keyDisplay').textContent = subUrl;
            keyArea.style.display = 'block';
-        } else {
-           keyArea.style.display = 'none';
         }
       } else {
         statusBadge.classList.remove('active');
@@ -437,53 +368,79 @@
     }
 
     // ==========================================
-    // ACTIONS: BUY & VPN
+    // ACTIONS: BUY
     // ==========================================
     document.getElementById('buyBtn').addEventListener('click', async () => {
       if(!currentUser) return;
-      
       const btn = document.getElementById('buyBtn');
       const btnText = document.getElementById('buyBtnText');
-      btnText.textContent = "Обработка...";
-      btn.disabled = true;
-      console.log("Buying subscription for:", currentUser.id);
+      btnText.textContent = "Обработка..."; btn.disabled = true;
 
       try {
         const data = await apiCall('buy', { userId: currentUser.id });
-        console.log("Buy response:", data);
-
         currentUser.paid_until = data.newPaidUntil;
         currentUser.sub_id = data.subUrl ? data.subUrl.split('/').pop() : currentUser.sub_id;
-        
-        if(data.subUrl) {
-            document.getElementById('keyDisplay').textContent = data.subUrl;
-        }
-
+        if(data.subUrl) document.getElementById('keyDisplay').textContent = data.subUrl;
         alert("Оплата успешна! Подписка активирована.");
         updateUI();
-
-      } catch (err) {
-        console.error("Buy error:", err);
-        alert("Ошибка оплаты: " + err.message);
-      } finally {
-        btnText.textContent = "Купить подписку (30 дней)";
-        btn.disabled = false;
-      }
+      } catch (err) { alert("Ошибка: " + err.message); } 
+      finally { btnText.textContent = "Купить подписку (30 дней)"; btn.disabled = false; }
     });
 
-    document.getElementById('vpnBtn').addEventListener('click', () => {
-      const key = document.getElementById('keyDisplay').textContent;
-      if(key) {
-        window.open(key, '_blank');
-        alert("Если приложение VPN не открылось, скопируйте ссылку и вставьте в приложение V2Ray/Shadowrocket.");
+    // ==========================================
+    // ACTIONS: VPN CONFIG DOWNLOAD (NEW LOGIC)
+    // ==========================================
+    document.getElementById('vpnBtn').addEventListener('click', async () => {
+      if(!currentUser) return;
+      const btn = document.getElementById('vpnBtn');
+      const originalContent = btn.innerHTML;
+      
+      btn.innerHTML = `<span class="btn-text">Получение конфига...</span>`;
+      btn.disabled = true;
+
+      try {
+        // 1. Запрашиваем конфиг у сервера
+        const data = await apiCall('get-config', { userId: currentUser.id });
+        
+        if (data.config) {
+          // 2. Создаем файл для скачивания
+          const blob = new Blob([data.config], { type: 'text/plain' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'vpn_config.txt'; // Имя файла
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+
+          // 3. Копируем ссылку в буфер (как резерв)
+          if(data.subUrl) {
+             try {
+               await navigator.clipboard.writeText(data.subUrl);
+               alert("Файл скачивается!\nСсылка также скопирована в буфер обмена.\n\nОткройте приложение VPN (например, Shadowrocket) и импортируйте файл или вставьте ссылку.");
+             } catch(e) {
+               alert("Файл скачивается!\nОткройте приложение VPN и импортируйте файл.");
+             }
+          } else {
+             alert("Файл скачивается!\nОткройте приложение VPN и импортируйте файл.");
+          }
+        } else {
+          throw new Error("Конфигурация пуста");
+        }
+
+      } catch (err) {
+        console.error(err);
+        alert("Не удалось получить конфиг: " + err.message);
+      } finally {
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
       }
     });
 
     function copyKey() {
       const key = document.getElementById('keyDisplay').textContent;
-      navigator.clipboard.writeText(key).then(() => {
-        alert("Ссылка скопирована!");
-      });
+      navigator.clipboard.writeText(key).then(() => { alert("Ссылка скопирована!"); });
     }
 
   </script>
