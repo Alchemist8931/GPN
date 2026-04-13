@@ -2,445 +2,797 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VPN Service PWA</title>
-  
-  <!-- Анти-кэш -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>GPN — VPN Service</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-  <link href="https://fonts.googleapis.com/css2?family=SN+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
 
   <style>
     :root {
-      --bg-primary: #f8f9fa; --bg-card: #ffffff; --text-primary: #1a1a1a;
-      --text-secondary: #6b7280; --text-muted: #9ca3af; --border-color: #e5e7eb;
-      --accent: #000000; --accent-hover: #333333; --success: #10b981;
-      --warning: #f59e0b; --error: #ef4444;
+      --bg: #fafaf9;
+      --bg-card: #ffffff;
+      --bg-input: #f5f5f4;
+      --text: #1c1917;
+      --text-2: #57534e;
+      --text-3: #a8a29e;
+      --border: #e7e5e4;
+      --accent: #1c1917;
+      --accent-2: #292524;
+      --green: #16a34a;
+      --green-bg: #f0fdf4;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --yellow: #ca8a04;
+      --yellow-bg: #fefce8;
+      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,.08);
+      --radius: 14px;
+      --transition: .25s cubic-bezier(.4,0,.2,1);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { height:100%; }
     body {
-      font-family: 'SN Pro', sans-serif; background: var(--bg-primary);
-      color: var(--text-primary); min-height: 100vh; overflow-x: hidden;
+      font-family:'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100%; display:flex; flex-direction:column;
+      -webkit-font-smoothing:antialiased;
     }
-    
-    /* Preloader */
+
+    /* ===== PRELOADER ===== */
     .preloader {
-      position: fixed; inset: 0; background: var(--bg-primary);
-      display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999;
-      transition: opacity 0.5s ease, visibility 0.5s ease;
+      position:fixed; inset:0; background:var(--bg);
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      z-index:9999; transition: opacity .5s ease, visibility .5s ease;
     }
-    .preloader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-    .loader-spinner {
-      width: 40px; height: 40px; border: 3px solid var(--border-color);
-      border-top-color: var(--accent); border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    .loader-text { margin-top: 12px; font-size: 12px; color: var(--text-muted); }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .preloader.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+    .preloader svg { width:48px; height:48px; animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:.4;transform:scale(.95)} 50%{opacity:1;transform:scale(1)} }
 
-    /* Auth Overlay & Modal */
-    .bg-pattern {
-      position: fixed; inset: 0;
-      background-image: radial-gradient(circle at 20% 50%, rgba(0,0,0,0.02) 0%, transparent 50%);
-      pointer-events: none; z-index: 0;
+    /* ===== AUTH ===== */
+    .auth-screen {
+      flex:1; display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      padding:24px; opacity:0; visibility:hidden;
+      transition: opacity .4s ease, visibility 0s linear .4s;
     }
-    .auth-overlay {
-      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-      z-index: 1000; background: rgba(248, 249, 250, 0.9); backdrop-filter: blur(8px);
-      opacity: 0; visibility: hidden; pointer-events: none;
-      transition: opacity 0.4s ease, visibility 0s linear 0.4s;
+    .auth-screen.visible {
+      opacity:1; visibility:visible;
+      transition: opacity .4s ease, visibility 0s linear 0s;
     }
-    .auth-overlay.visible { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity 0.4s ease, visibility 0s linear 0s; }
-    
-    .auth-modal {
-      background: var(--bg-card); border-radius: 20px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); overflow: hidden;
-      width: 420px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      transform: scale(0.95) translateY(20px); position: relative;
-    }
-    .auth-overlay.visible .auth-modal { transform: scale(1) translateY(0); }
-    
-    .modal-header { padding: 24px 24px 0; position: relative; }
-    .tab-container { position: relative; display: flex; padding: 2px; background-color: #e8e8e8; border-radius: 10px; }
-    .tab-container .indicator { width: 50%; height: 36px; background: var(--bg-card); position: absolute; top: 2px; left: 2px; z-index: 9; border: 0.5px solid rgba(0, 0, 0, 0.04); box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.12); border-radius: 8px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .tab-container .tab { width: 50%; height: 36px; position: absolute; z-index: 99; outline: none; opacity: 0; cursor: pointer; }
-    .tab-container .tab_label { width: 50%; height: 36px; position: relative; z-index: 999; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: color 0.3s ease; }
-    .tab-container .tab:checked + .tab_label { color: var(--text-primary); }
-    .tab-container .tab--register:checked ~ .indicator { left: 50%; }
 
-    .modal-body { padding: 24px; padding-top: 28px; transition: padding 0.3s ease; }
-    
-    .forms-wrapper { position: relative; width: 100%; min-height: 250px; }
-    .auth-form { display: flex; flex-direction: column; gap: 16px; width: 100%; position: absolute; top: 0; left: 0; transition: all 0.3s ease; }
-    
-    .login-form { z-index: 2; opacity: 1; visibility: visible; }
-    .register-form { z-index: 1; opacity: 0; visibility: hidden; transform: translateX(30px); pointer-events: none; }
-    
-    .auth-modal.is-register .login-form { z-index: 1; opacity: 0; visibility: hidden; transform: translateX(-30px); pointer-events: none; }
-    .auth-modal.is-register .register-form { z-index: 2; opacity: 1; visibility: visible; transform: translateX(0); pointer-events: auto; }
+    .auth-brand { margin-bottom:40px; text-align:center; }
+    .auth-brand h1 {
+      font-size:28px; font-weight:700; letter-spacing:-.02em;
+      background:linear-gradient(135deg,#1c1917 0%,#57534e 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    }
+    .auth-brand p { font-size:14px; color:var(--text-3); margin-top:6px; }
 
-    .input-container { position: relative; width: 100%; }
-    .styled_input_bar {
-      width: 100%; padding: 14px 16px; font-size: 15px; font-family: 'SN Pro', sans-serif;
-      border: 1.5px solid var(--border-color); border-radius: 12px;
-      background-color: var(--bg-primary); color: var(--text-primary); outline: none;
-      transition: all 0.3s ease;
+    .auth-card {
+      width:100%; max-width:380px; background:var(--bg-card);
+      border-radius:20px; box-shadow:var(--shadow-lg);
+      overflow:hidden;
+      transform:translateY(16px); transition: transform .4s var(--transition);
     }
-    .styled_input_bar:focus { border-color: var(--accent); background-color: var(--bg-card); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05); }
-    .input-label { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--text-muted); pointer-events: none; transition: all 0.3s ease; background: transparent; padding: 0 4px; }
-    .styled_input_bar:focus + .input-label, .styled_input_bar:not(:placeholder-shown) + .input-label { top: 0; left: 12px; font-size: 12px; font-weight: 500; background-color: var(--bg-card); color: var(--accent); }
+    .auth-screen.visible .auth-card { transform:translateY(0); }
 
-    .submit-btn { width: 100%; padding: 14px 24px; background: var(--accent); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden; margin-top: 8px; }
-    .submit-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
-    .submit-btn:disabled { background: var(--text-muted); cursor: not-allowed; transform: none; }
-    .submit-btn .loader { display: none; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
-    .submit-btn.loading .btn-text { visibility: hidden; }
-    .submit-btn.loading .loader { display: block; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+    /* tabs */
+    .auth-tabs {
+      display:flex; padding:4px; margin:20px 20px 0;
+      background:var(--bg-input); border-radius:10px;
+    }
+    .auth-tab {
+      flex:1; padding:10px; text-align:center; font-size:13px;
+      font-weight:600; border:none; background:none;
+      color:var(--text-3); cursor:pointer;
+      border-radius:8px; transition: all var(--transition);
+    }
+    .auth-tab.active {
+      background:var(--bg-card); color:var(--text);
+      box-shadow:0 1px 3px rgba(0,0,0,.1);
+    }
 
-    /* App Shell */
-    .app-container {
-      display: none; flex-direction: column; align-items: center; justify-content: center;
-      min-height: 100vh; padding: 20px;
+    .auth-body { padding:24px; position:relative; min-height:220px; }
+    .auth-form {
+      display:flex; flex-direction:column; gap:14px;
+      position:absolute; top:24px; left:24px; right:24px;
+      opacity:0; visibility:hidden; transform:translateX(24px);
+      transition: all .3s ease; pointer-events:none;
     }
-    .app-container.active { display: flex; }
-    
-    .vpn-card {
-      background: var(--bg-card); padding: 40px; border-radius: 24px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.08); width: 100%; max-width: 400px;
-      display: flex; flex-direction: column; align-items: center; gap: 20px;
-      text-align: center;
+    .auth-form.active {
+      opacity:1; visibility:visible; transform:translateX(0);
+      pointer-events:auto; position:relative; top:auto; left:auto; right:auto;
     }
-    
-    .status-badge {
-      padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;
-      background: var(--bg-primary); color: var(--text-secondary);
+
+    .field { position:relative; }
+    .field input {
+      width:100%; padding:14px 16px; font-size:15px;
+      font-family:inherit; background:var(--bg-input);
+      border:1.5px solid transparent; border-radius:12px;
+      color:var(--text); outline:none; transition: all var(--transition);
     }
-    .status-badge.active { background: rgba(16, 185, 129, 0.1); color: var(--success); }
-    
-    .vpn-btn {
-      width: 100%; padding: 16px; border-radius: 14px; font-size: 15px; font-weight: 600;
-      border: none; cursor: pointer; transition: all 0.2s ease; display: flex;
-      align-items: center; justify-content: center; gap: 10px;
+    .field input:focus {
+      border-color:var(--accent); background:var(--bg-card);
+      box-shadow:0 0 0 3px rgba(28,25,23,.06);
     }
-    .vpn-btn.primary { background: var(--accent); color: white; }
-    .vpn-btn.secondary { background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); }
-    .vpn-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    
-    .key-display {
-      width: 100%; padding: 12px; background: var(--bg-primary); border-radius: 10px;
-      font-size: 12px; word-break: break-all; color: var(--text-muted); cursor: pointer;
-      border: 1px dashed var(--border-color);
+    .field label {
+      position:absolute; left:16px; top:50%; transform:translateY(-50%);
+      font-size:14px; color:var(--text-3); pointer-events:none;
+      transition: all .2s ease; background:transparent; padding:0 4px;
     }
+    .field input:focus + label,
+    .field input:not(:placeholder-shown) + label {
+      top:0; left:12px; font-size:11px; font-weight:600;
+      background:var(--bg-card); color:var(--accent);
+    }
+
+    .btn {
+      width:100%; padding:14px; font-size:14px; font-weight:600;
+      font-family:inherit; border:none; border-radius:12px;
+      cursor:pointer; transition: all var(--transition);
+      position:relative; overflow:hidden;
+    }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-primary:hover { background:var(--accent-2); }
+    .btn-primary:disabled { opacity:.4; cursor:not-allowed; }
+    .btn-secondary {
+      background:var(--bg-input); color:var(--text);
+      border:1px solid var(--border);
+    }
+    .btn-secondary:hover { background:var(--border); }
+    .btn .spinner {
+      display:none; width:18px; height:18px;
+      border:2px solid rgba(255,255,255,.3);
+      border-top-color:#fff; border-radius:50%;
+      animation:spin .7s linear infinite;
+      position:absolute; left:50%; top:50%;
+      transform:translate(-50%,-50%);
+    }
+    .btn.loading .btn-label { visibility:hidden; }
+    .btn.loading .spinner { display:block; }
+    @keyframes spin { to{transform:translate(-50%,-50%) rotate(360deg)} }
+
+    .auth-note { font-size:12px; color:var(--text-3); margin-top:4px; }
+
+    /* ===== APP ===== */
+    .app-screen {
+      flex:1; display:none; flex-direction:column;
+      align-items:center; padding:24px; padding-top:60px;
+    }
+    .app-screen.active { display:flex; }
+
+    .app-header {
+      display:flex; align-items:center; justify-content:space-between;
+      width:100%; max-width:420px; margin-bottom:32px;
+    }
+    .app-logo { font-size:20px; font-weight:700; letter-spacing:-.02em; }
+    .app-logout {
+      font-size:13px; color:var(--text-3); cursor:pointer;
+      background:none; border:none; font-family:inherit;
+      transition:color var(--transition);
+    }
+    .app-logout:hover { color:var(--red); }
+
+    .status-card {
+      width:100%; max-width:420px; background:var(--bg-card);
+      border-radius:20px; box-shadow:var(--shadow);
+      padding:28px; margin-bottom:16px;
+    }
+    .status-row {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:20px;
+    }
+    .status-label { font-size:13px; color:var(--text-3); font-weight:500; }
+    .status-chip {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:5px 12px; border-radius:20px; font-size:12px; font-weight:600;
+    }
+    .status-chip.active { background:var(--green-bg); color:var(--green); }
+    .status-chip.inactive { background:var(--red-bg); color:var(--red); }
+    .status-chip.loading { background:var(--yellow-bg); color:var(--yellow); }
+    .status-dot {
+      width:6px; height:6px; border-radius:50%; background:currentColor;
+    }
+    .status-days {
+      font-size:36px; font-weight:700; letter-spacing:-.03em;
+      line-height:1; margin-bottom:4px;
+    }
+    .status-days-label { font-size:13px; color:var(--text-3); }
+
+    .actions {
+      width:100%; max-width:420px;
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .action-btn {
+      display:flex; align-items:center; gap:12px;
+      padding:16px 20px; background:var(--bg-card);
+      border:1px solid var(--border); border-radius:var(--radius);
+      cursor:pointer; transition:all var(--transition);
+      text-align:left; font-family:inherit;
+    }
+    .action-btn:hover { border-color:var(--accent); box-shadow:var(--shadow); }
+    .action-btn:disabled { opacity:.35; cursor:not-allowed; pointer-events:none; }
+    .action-btn .icon {
+      width:40px; height:40px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:18px; flex-shrink:0;
+    }
+    .action-btn .icon.buy { background:#fef3c7; }
+    .action-btn .icon.download { background:#dbeafe; }
+    .action-btn .icon.copy { background:#e0e7ff; }
+    .action-btn .icon.app { background:#f3e8ff; }
+    .action-title { font-size:14px; font-weight:600; }
+    .action-desc { font-size:12px; color:var(--text-3); margin-top:2px; }
+
+    .sub-url-box {
+      width:100%; max-width:420px; margin-top:16px;
+      padding:14px 16px; background:var(--bg-input);
+      border:1px dashed var(--border); border-radius:12px;
+      font-size:11px; color:var(--text-3); word-break:break-all;
+      line-height:1.5; cursor:pointer; transition:all var(--transition);
+    }
+    .sub-url-box:hover { border-color:var(--accent); color:var(--text-2); }
+
+    /* ===== BOTTOM SHEET (App Picker) ===== */
+    .sheet-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.4);
+      z-index:5000; opacity:0; visibility:hidden;
+      transition: opacity .3s ease, visibility 0s linear .3s;
+    }
+    .sheet-overlay.visible {
+      opacity:1; visibility:visible;
+      transition: opacity .3s ease, visibility 0s linear 0s;
+    }
+    .sheet {
+      position:fixed; bottom:0; left:0; right:0;
+      background:var(--bg-card); border-radius:20px 20px 0 0;
+      padding:20px 20px 40px; z-index:5001;
+      transform:translateY(100%); transition:transform .35s cubic-bezier(.4,0,.2,1);
+    }
+    .sheet-overlay.visible .sheet { transform:translateY(0); }
+
+    .sheet-handle {
+      width:36px; height:4px; background:var(--border);
+      border-radius:2px; margin:0 auto 20px;
+    }
+    .sheet h3 { font-size:16px; font-weight:700; margin-bottom:6px; }
+    .sheet p { font-size:13px; color:var(--text-3); margin-bottom:20px; line-height:1.5; }
+
+    .app-option {
+      display:flex; align-items:center; gap:14px;
+      padding:14px 16px; border-radius:12px;
+      background:var(--bg-input); margin-bottom:8px;
+      cursor:pointer; transition:all var(--transition);
+      border:none; width:100%; text-align:left; font-family:inherit;
+    }
+    .app-option:hover { background:var(--border); }
+    .app-option .app-icon {
+      width:36px; height:36px; border-radius:8px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:16px; font-weight:700; background:var(--accent); color:#fff;
+    }
+    .app-option .app-info { flex:1; }
+    .app-option .app-name { font-size:14px; font-weight:600; }
+    .app-option .app-note { font-size:11px; color:var(--text-3); }
+    .app-option .arrow { color:var(--text-3); font-size:18px; }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position:fixed; bottom:32px; left:50%; transform:translateX(-50%) translateY(80px);
+      background:var(--accent); color:#fff; padding:12px 24px;
+      border-radius:12px; font-size:13px; font-weight:500;
+      z-index:9999; opacity:0; transition:all .35s ease;
+      box-shadow:0 8px 24px rgba(0,0,0,.2);
+    }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
 
   <!-- Preloader -->
   <div class="preloader" id="preloader">
-    <div class="loader-spinner"></div>
-    <div class="loader-text" id="loaderText">Загрузка...</div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#1c1917" stroke-width="2" stroke-linecap="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
   </div>
 
-  <!-- Background Pattern -->
-  <div class="bg-pattern"></div>
+  <!-- AUTH SCREEN -->
+  <div class="auth-screen" id="authScreen">
+    <div class="auth-brand">
+      <h1>GPN</h1>
+      <p>Быстрый и безопасный VPN</p>
+    </div>
 
-  <!-- AUTH OVERLAY -->
-  <div class="auth-overlay" id="authOverlay">
-    <div class="auth-modal" id="authModal">
-      <div class="modal-header">
-        <div class="tab-container">
-          <input type="radio" name="authTab" id="tabLogin" class="tab tab--login" checked />
-          <label class="tab_label" for="tabLogin">Вход</label>
-          <input type="radio" name="authTab" id="tabRegister" class="tab tab--register" />
-          <label class="tab_label" for="tabRegister">Регистрация</label>
-          <div class="indicator"></div>
-        </div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Вход</button>
+        <button class="auth-tab" data-tab="register">Регистрация</button>
       </div>
-      
-      <div class="modal-body">
-        <div class="forms-wrapper">
-          <!-- Login Form -->
-          <form class="auth-form login-form" id="loginForm">
-            <div class="input-container">
-              <input type="text" class="styled_input_bar" id="loginEmail" placeholder=" " autocomplete="email" />
-              <label class="input-label" for="loginEmail">почта</label>
-            </div>
-            <div class="input-container">
-              <input type="password" class="styled_input_bar" id="loginPass" placeholder=" " autocomplete="current-password" />
-              <label class="input-label" for="loginPass">пароль</label>
-            </div>
-            <button type="submit" class="submit-btn" id="loginBtn"><span class="btn-text">войти</span><div class="loader"></div></button>
-          </form>
-          
-          <!-- Register Form -->
-          <form class="auth-form register-form" id="registerForm">
-            <div class="input-container">
-              <input type="email" class="styled_input_bar" id="regEmail" placeholder=" " autocomplete="email" />
-              <label class="input-label" for="regEmail">ваша почта</label>
-            </div>
-            <button type="submit" class="submit-btn" id="registerBtn"><span class="btn-text">зарегистрироваться</span><div class="loader"></div></button>
-            <p style="font-size: 12px; color: var(--text-muted); margin-top: 10px;">Пароль будет создан автоматически</p>
-          </form>
-        </div>
+
+      <div class="auth-body">
+        <!-- Login -->
+        <form class="auth-form active" id="loginForm" data-form="login">
+          <div class="field">
+            <input type="email" id="loginEmail" placeholder=" " autocomplete="email"/>
+            <label for="loginEmail">Email</label>
+          </div>
+          <div class="field">
+            <input type="password" id="loginPass" placeholder=" " autocomplete="current-password"/>
+            <label for="loginPass">Пароль</label>
+          </div>
+          <button type="submit" class="btn btn-primary" id="loginBtn">
+            <span class="btn-label">Войти</span><div class="spinner"></div>
+          </button>
+        </form>
+
+        <!-- Register -->
+        <form class="auth-form" id="registerForm" data-form="register">
+          <div class="field">
+            <input type="email" id="regEmail" placeholder=" " autocomplete="email"/>
+            <label for="regEmail">Email</label>
+          </div>
+          <button type="submit" class="btn btn-primary" id="regBtn">
+            <span class="btn-label">Создать аккаунт</span><div class="spinner"></div>
+          </button>
+          <p class="auth-note">Пароль будет сгенерирован автоматически</p>
+        </form>
       </div>
     </div>
   </div>
 
-  <!-- APP CONTAINER -->
-  <div class="app-container" id="appContainer">
-    <div class="vpn-card">
-      <h2 style="font-weight: 700; font-size: 24px;">VPN Service</h2>
-      
-      <div id="statusContainer">
-        <span class="status-badge" id="statusBadge">Проверка статуса...</span>
-      </div>
+  <!-- APP SCREEN -->
+  <div class="app-screen" id="appScreen">
+    <div class="app-header">
+      <div class="app-logo">GPN</div>
+      <button class="app-logout" id="logoutBtn">Выйти</button>
+    </div>
 
-      <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
-        <button class="vpn-btn primary" id="buyBtn">
-          <span class="material-symbols-outlined" style="font-size: 20px;">shopping_bag</span>
-          <span id="buyBtnText">Купить подписку (30 дней)</span>
-        </button>
-        
-        <button class="vpn-btn secondary" id="vpnBtn" disabled>
-          <span class="material-symbols-outlined" style="font-size: 20px;">download</span>
-          <span>Включить VPN (скачать конфиг)</span>
-        </button>
+    <!-- Status Card -->
+    <div class="status-card">
+      <div class="status-row">
+        <span class="status-label">Статус подписки</span>
+        <span class="status-chip loading" id="statusChip">
+          <span class="status-dot"></span>
+          <span id="statusText">Проверка...</span>
+        </span>
       </div>
+      <div class="status-days" id="daysCount">—</div>
+      <div class="status-days-label">дней осталось</div>
+    </div>
 
-      <div id="keyArea" style="display: none; width: 100%;">
-        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Ссылка для продвинутых пользователей:</p>
-        <div class="key-display" id="keyDisplay" onclick="copyKey()"></div>
-      </div>
+    <!-- Action Buttons -->
+    <div class="actions">
+      <button class="action-btn" id="buyBtn">
+        <div class="icon buy">💳</div>
+        <div>
+          <div class="action-title" id="buyTitle">Купить подписку</div>
+          <div class="action-desc">30 дней доступа</div>
+        </div>
+      </button>
 
-      <button class="vpn-btn secondary" style="margin-top: 20px; background: transparent; border: none; color: var(--text-muted);" onclick="logout()">
-        Выйти из аккаунта
+      <button class="action-btn" id="downloadBtn" disabled>
+        <div class="icon download">📥</div>
+        <div>
+          <div class="action-title">Скачать конфигурацию</div>
+          <div class="action-desc">Установить VPN-профиль на устройство</div>
+        </div>
+      </button>
+
+      <button class="action-btn" id="copyBtn" disabled>
+        <div class="icon copy">📋</div>
+        <div>
+          <div class="action-title">Скопировать ссылку</div>
+          <div class="action-desc">Subscription URL для ручного импорта</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Sub URL display -->
+    <div class="sub-url-box" id="subUrlBox" style="display:none" onclick="copySubUrl()"></div>
+  </div>
+
+  <!-- BOTTOM SHEET: App Picker -->
+  <div class="sheet-overlay" id="sheetOverlay">
+    <div class="sheet" id="appSheet">
+      <div class="sheet-handle"></div>
+      <h3>Выберите приложение</h3>
+      <p id="sheetDesc">Выберите VPN-клиент для импорта конфигурации. Если приложение не установлено — сначала скачайте его из магазина.</p>
+      <div id="appOptions"></div>
+      <button class="app-option" style="margin-top:12px; background:var(--bg-card); border:1px dashed var(--border);" onclick="downloadRawConfig()">
+        <div class="app-icon" style="background:var(--bg-input);color:var(--text);">📄</div>
+        <div class="app-info">
+          <div class="app-name">Скачать файл конфигурации</div>
+          <div class="app-note">Универсальный способ — импорт вручную</div>
+        </div>
+        <span class="arrow">→</span>
+      </button>
+      <button class="app-option" onclick="closeSheet()" style="justify-content:center;margin-top:4px;background:transparent;">
+        <span style="font-size:14px;font-weight:500;color:var(--text-3);">Закрыть</span>
       </button>
     </div>
   </div>
 
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
   <script>
     // ==========================================
-    // CONFIGURATION & VERSIONING
+    // CONFIG
     // ==========================================
-    const APP_VERSION = "1.0.7"; // Added config download logic
-    const SUPABASE_URL = 'https://ncdwlmgwljjwpuawlssr.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZHdsbWd3bGpqd3B1YXdsc3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NTQxNDksImV4cCI6MjA4MzAzMDE0OX0.rrIznUflWydylTnUZvOxOkeF9eMp91qNN4Bjq2gXRL8';
-    
-    const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/VPN_Aleksander`;
+    const APP_VERSION = '2.0.0';
+    const SUPABASE_URL   = 'https://fyynjpglyacgxjoknteh.supabase.co';
+    const SUPABASE_ANON  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5eW5qcGdseWFjZ3hqb2tudGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4OTMwMDQsImV4cCI6MjA4NDQ2OTAwNH0.E3Km0BprWfvJxjXBiKbfLsM2cvlSmpOmknJWGTahnco'; // ← замените
+    const FUNCTION_URL   = `${SUPABASE_URL}/functions/v1/VPN_Aleksander`;
+    const SUB_BASE       = 'https://x1.a2x2.top:14018/5G4234Y28tULv0ELMU'; // ← замените на свой
 
-    let supabaseClient = null;
     let currentUser = null;
+    let cachedConfig = null;
 
-    console.log(`%c APP VERSION: ${APP_VERSION} `, 'background: #222; color: #bada55; font-size: 16px;');
-
-    // ==========================================
-    // INIT & PRELOADER LOGIC
-    // ==========================================
-    
-    setTimeout(() => {
-      const preloader = document.getElementById('preloader');
-      if (!preloader.classList.contains('hidden')) {
-        preloader.classList.add('hidden');
-        setTimeout(() => { document.getElementById('authOverlay').classList.add('visible'); }, 100);
-      }
-    }, 2000);
-
-    try {
-      if (typeof window.supabase !== 'undefined') {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
-        console.log("Supabase initialized.");
-      }
-    } catch (e) { console.error("Init error:", e); }
+    console.log(`%c GPN v${APP_VERSION} `, 'background:#1c1917;color:#fafaf9;font-size:14px;border-radius:4px;padding:2px 8px;');
 
     // ==========================================
-    // UI INTERACTIONS
+    // PLATFORM DETECTION
     // ==========================================
-    const tabLogin = document.getElementById('tabLogin');
-    const tabRegister = document.getElementById('tabRegister');
-    const authModal = document.getElementById('authModal');
+    function getPlatform() {
+      const ua = navigator.userAgent || '';
+      if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
+      if (/android/i.test(ua)) return 'android';
+      return 'desktop';
+    }
 
-    tabLogin.addEventListener('change', () => { if(tabLogin.checked) authModal.classList.remove('is-register'); });
-    tabRegister.addEventListener('change', () => { if(tabRegister.checked) authModal.classList.add('is-register'); });
+    // VPN apps config per platform
+    const VPN_APPS = {
+      ios: [
+        { name:'Streisand', note:'Бесплатный, рекомендуем', scheme:'streisand://import/', storeUrl:'https://apps.apple.com/app/streisand/id6450534064', icon:'S' },
+        { name:'V2Box', note:'Простой интерфейс', scheme:'v2box://install-sub?url=', storeUrl:'https://apps.apple.com/app/v2box-v2ray-client/id6446814690', icon:'V' },
+        { name:'Shadowrocket', note:'Платный, популярный', scheme:'sub://', storeUrl:'https://apps.apple.com/app/shadowrocket/id932747118', icon:'🚀', isShadowrocket:true },
+        { name:'Sing-Box', note:'Open source', scheme:'sing-box://import-remote-profile?url=', storeUrl:'https://apps.apple.com/app/sing-box/id6451272673', icon:'📦' },
+      ],
+      android: [
+        { name:'v2rayNG', note:'Рекомендуем, бесплатный', scheme:'v2rayng://install-config?url=', storeUrl:'https://play.google.com/store/apps/details?id=com.v2ray.ang', icon:'V' },
+        { name:'NekoBox', note:'Продвинутый клиент', scheme:'', storeUrl:'https://play.google.com/store/apps/details?id=moe.nb4a', icon:'N' },
+        { name:'Sing-Box', note:'Open source', scheme:'sing-box://import-remote-profile?url=', storeUrl:'https://play.google.com/store/apps/details?id=io.nekohasekai.sfa', icon:'📦' },
+      ],
+      desktop: [
+        { name:'Hiddify', note:'Windows / macOS / Linux', scheme:'', storeUrl:'https://github.com/hiddify/hiddify-app/releases', icon:'H' },
+        { name:'V2rayN', note:'Windows', scheme:'', storeUrl:'https://github.com/2dust/v2rayN/releases', icon:'V' },
+        { name:'NekoRay', note:'Windows / Linux', scheme:'', storeUrl:'https://github.com/MatsuriDayo/nekoray/releases', icon:'N' },
+      ]
+    };
 
     // ==========================================
-    // HELPER: API CALL
+    // HELPERS
     // ==========================================
     async function apiCall(action, payload) {
       const res = await fetch(FUNCTION_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':`Bearer ${SUPABASE_ANON}` },
         body: JSON.stringify({ action, payload })
       });
       let data = {};
-      try { data = await res.json(); } catch (e) { throw new Error(`Server error ${res.status}`); }
-      if (!res.ok) throw new Error(data.error || `HTTP Error ${res.status}`);
+      try { data = await res.json(); } catch(e) { throw new Error(`Server error ${res.status}`); }
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       return data;
     }
 
+    function showToast(msg, duration=2500) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    function getSubUrl() {
+      return currentUser?.sub_id ? `${SUB_BASE}/${currentUser.sub_id}` : '';
+    }
+
     // ==========================================
-    // LOGIC: REGISTER
+    // PRELOADER
+    // ==========================================
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('preloader').classList.add('hidden');
+        setTimeout(() => document.getElementById('authScreen').classList.add('visible'), 200);
+      }, 800);
+    });
+
+    // ==========================================
+    // AUTH TABS
+    // ==========================================
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const target = tab.dataset.tab;
+        document.querySelectorAll('.auth-form').forEach(f => {
+          f.classList.toggle('active', f.dataset.form === target);
+        });
+      });
+    });
+
+    // ==========================================
+    // REGISTER
     // ==========================================
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const btn = document.getElementById('registerBtn');
+      const btn = document.getElementById('regBtn');
       const email = document.getElementById('regEmail').value.trim();
-      if(!email) return alert("Введите почту");
-      
+      if (!email) return showToast('Введите email');
+
       btn.classList.add('loading'); btn.disabled = true;
       try {
         const data = await apiCall('register', { email });
+        // Auto-fill login form
         document.getElementById('loginEmail').value = email;
         document.getElementById('loginPass').value = data.password;
-        tabLogin.checked = true; authModal.classList.remove('is-register');
-        alert(`Регистрация успешна! Пароль: ${data.password}\nВойдите в систему.`);
-      } catch (err) { alert("Ошибка: " + err.message); } 
+        // Switch to login tab
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        document.querySelector('[data-tab="login"]').classList.add('active');
+        document.querySelectorAll('.auth-form').forEach(f => {
+          f.classList.toggle('active', f.dataset.form === 'login');
+        });
+        showToast(`Пароль: ${data.password} — сохраните его!`, 5000);
+      } catch (err) { showToast(err.message); }
       finally { btn.classList.remove('loading'); btn.disabled = false; }
     });
 
     // ==========================================
-    // LOGIC: LOGIN
+    // LOGIN
     // ==========================================
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('loginBtn');
       const email = document.getElementById('loginEmail').value.trim();
       const pass = document.getElementById('loginPass').value;
+      if (!email || !pass) return showToast('Заполните все поля');
 
       btn.classList.add('loading'); btn.disabled = true;
       try {
         const data = await apiCall('login', { email, password: pass });
         currentUser = data.user;
         showApp();
-      } catch (err) { alert("Ошибка входа: " + err.message); } 
+      } catch (err) { showToast(err.message); }
       finally { btn.classList.remove('loading'); btn.disabled = false; }
     });
 
     // ==========================================
-    // APP STATE
+    // SHOW APP
     // ==========================================
     function showApp() {
-      document.getElementById('authOverlay').classList.remove('visible');
-      setTimeout(() => { document.getElementById('appContainer').classList.add('active'); updateUI(); }, 400);
+      document.getElementById('authScreen').classList.remove('visible');
+      setTimeout(() => {
+        document.getElementById('appScreen').classList.add('active');
+        updateUI();
+      }, 400);
     }
 
-    function logout() {
+    // ==========================================
+    // LOGOUT
+    // ==========================================
+    document.getElementById('logoutBtn').addEventListener('click', () => {
       currentUser = null;
-      document.getElementById('appContainer').classList.remove('active');
-      setTimeout(() => { document.getElementById('authOverlay').classList.add('visible'); }, 400);
-    }
+      cachedConfig = null;
+      document.getElementById('appScreen').classList.remove('active');
+      setTimeout(() => document.getElementById('authScreen').classList.add('visible'), 300);
+    });
 
+    // ==========================================
+    // UPDATE UI
+    // ==========================================
     function updateUI() {
-      if(!currentUser) return;
+      if (!currentUser) return;
       const now = Math.floor(Date.now() / 1000);
-      const paidUntil = currentUser.paid_until || 0;
-      const daysLeft = Math.max(0, Math.ceil((paidUntil - now) / 86400));
-      
-      const statusBadge = document.getElementById('statusBadge');
-      const vpnBtn = document.getElementById('vpnBtn');
-      const buyBtnText = document.getElementById('buyBtnText');
-      const keyArea = document.getElementById('keyArea');
+      const pu = currentUser.paid_until || 0;
+      const days = Math.max(0, Math.ceil((pu - now) / 86400));
+      const active = days > 0;
 
-      statusBadge.textContent = `Осталось дней: ${daysLeft}`;
+      // Status
+      const chip = document.getElementById('statusChip');
+      const chipText = document.getElementById('statusText');
+      chip.className = 'status-chip ' + (active ? 'active' : 'inactive');
+      chipText.textContent = active ? 'Активна' : 'Неактивна';
 
-      if(daysLeft > 0) {
-        statusBadge.classList.add('active');
-        vpnBtn.disabled = false;
-        buyBtnText.textContent = "Продлить (30 дней)";
-        
-        // Показываем ссылку
-        if(currentUser.sub_id) {
-           const subUrl = "https://x1.a2x2.top:14018/sub/" + currentUser.sub_id;
-           document.getElementById('keyDisplay').textContent = subUrl;
-           keyArea.style.display = 'block';
-        }
+      document.getElementById('daysCount').textContent = days;
+
+      // Buttons
+      document.getElementById('buyTitle').textContent = active ? 'Продлить подписку' : 'Купить подписку';
+      document.getElementById('downloadBtn').disabled = !active;
+      document.getElementById('copyBtn').disabled = !active;
+
+      // Sub URL
+      const urlBox = document.getElementById('subUrlBox');
+      if (active && currentUser.sub_id) {
+        urlBox.style.display = 'block';
+        urlBox.textContent = getSubUrl();
       } else {
-        statusBadge.classList.remove('active');
-        vpnBtn.disabled = true;
-        buyBtnText.textContent = "Купить подписку (30 дней)";
-        keyArea.style.display = 'none';
+        urlBox.style.display = 'none';
       }
     }
 
     // ==========================================
-    // ACTIONS: BUY
+    // BUY
     // ==========================================
     document.getElementById('buyBtn').addEventListener('click', async () => {
-      if(!currentUser) return;
+      if (!currentUser) return;
       const btn = document.getElementById('buyBtn');
-      const btnText = document.getElementById('buyBtnText');
-      btnText.textContent = "Обработка..."; btn.disabled = true;
+      const title = document.getElementById('buyTitle');
+      const origText = title.textContent;
+      title.textContent = 'Обработка...';
+      btn.disabled = true;
 
       try {
         const data = await apiCall('buy', { userId: currentUser.id });
         currentUser.paid_until = data.newPaidUntil;
-        currentUser.sub_id = data.subUrl ? data.subUrl.split('/').pop() : currentUser.sub_id;
-        if(data.subUrl) document.getElementById('keyDisplay').textContent = data.subUrl;
-        alert("Оплата успешна! Подписка активирована.");
+        currentUser.sub_id = data.subId || currentUser.sub_id;
+        showToast('Подписка активирована!');
         updateUI();
-      } catch (err) { alert("Ошибка: " + err.message); } 
-      finally { btnText.textContent = "Купить подписку (30 дней)"; btn.disabled = false; }
+      } catch (err) { showToast(err.message); }
+      finally { title.textContent = origText; btn.disabled = false; }
     });
 
     // ==========================================
-    // ACTIONS: VPN CONFIG DOWNLOAD (NEW LOGIC)
+    // DOWNLOAD CONFIG (show app picker)
     // ==========================================
-    document.getElementById('vpnBtn').addEventListener('click', async () => {
-      if(!currentUser) return;
-      const btn = document.getElementById('vpnBtn');
-      const originalContent = btn.innerHTML;
-      
-      btn.innerHTML = `<span class="btn-text">Получение конфига...</span>`;
-      btn.disabled = true;
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      openAppSheet();
+    });
 
-      try {
-        // 1. Запрашиваем конфиг у сервера
-        const data = await apiCall('get-config', { userId: currentUser.id });
-        
-        if (data.config) {
-          // 2. Создаем файл для скачивания
-          const blob = new Blob([data.config], { type: 'text/plain' });
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'vpn_config.txt'; // Имя файла
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
+    function openAppSheet() {
+      const platform = getPlatform();
+      const apps = VPN_APPS[platform] || VPN_APPS.desktop;
+      const container = document.getElementById('appOptions');
+      container.innerHTML = '';
 
-          // 3. Копируем ссылку в буфер (как резерв)
-          if(data.subUrl) {
-             try {
-               await navigator.clipboard.writeText(data.subUrl);
-               alert("Файл скачивается!\nСсылка также скопирована в буфер обмена.\n\nОткройте приложение VPN (например, Shadowrocket) и импортируйте файл или вставьте ссылку.");
-             } catch(e) {
-               alert("Файл скачивается!\nОткройте приложение VPN и импортируйте файл.");
-             }
-          } else {
-             alert("Файл скачивается!\nОткройте приложение VPN и импортируйте файл.");
-          }
+      const desc = document.getElementById('sheetDesc');
+      if (platform === 'ios') {
+        desc.textContent = 'Выберите VPN-клиент для iOS. Если приложение не установлено — нажмите чтобы перейти в App Store.';
+      } else if (platform === 'android') {
+        desc.textContent = 'Выберите VPN-клиент для Android. Если приложение не установлено — нажмите чтобы перейти в Google Play.';
+      } else {
+        desc.textContent = 'Скопируйте ссылку подписки и импортируйте в любой VPN-клиент на вашем компьютере.';
+      }
+
+      apps.forEach(app => {
+        const el = document.createElement('button');
+        el.className = 'app-option';
+        el.innerHTML = `
+          <div class="app-icon">${app.icon}</div>
+          <div class="app-info">
+            <div class="app-name">${app.name}</div>
+            <div class="app-note">${app.note}</div>
+          </div>
+          <span class="arrow">→</span>
+        `;
+        el.addEventListener('click', () => openInApp(app));
+        container.appendChild(el);
+      });
+
+      document.getElementById('sheetOverlay').classList.add('visible');
+    }
+
+    function closeSheet() {
+      document.getElementById('sheetOverlay').classList.remove('visible');
+    }
+
+    // Close sheet on overlay click
+    document.getElementById('sheetOverlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeSheet();
+    });
+
+    // ==========================================
+    // OPEN IN APP (deep link logic)
+    // ==========================================
+    function openInApp(app) {
+      const subUrl = getSubUrl();
+      if (!subUrl) return showToast('Нет активной подписки');
+
+      closeSheet();
+
+      if (app.scheme) {
+        let deepLink;
+        if (app.isShadowrocket) {
+          // Shadowrocket uses: sub://BASE64(url)
+          const b64 = btoa(subUrl);
+          deepLink = `sub://${b64}`;
+        } else if (app.scheme.includes('?url=')) {
+          deepLink = app.scheme + encodeURIComponent(subUrl);
         } else {
-          throw new Error("Конфигурация пуста");
+          // streisand://import/SUB_URL
+          deepLink = app.scheme + encodeURIComponent(subUrl);
         }
 
-      } catch (err) {
-        console.error(err);
-        alert("Не удалось получить конфиг: " + err.message);
-      } finally {
-        btn.innerHTML = originalContent;
-        btn.disabled = false;
+        // Try to open the app
+        const start = Date.now();
+        window.location.href = deepLink;
+
+        // If the app is not installed, redirect to store after a delay
+        setTimeout(() => {
+          if (Date.now() - start < 2500) {
+            // App didn't open — go to store
+            if (confirm(`${app.name} не установлен. Открыть магазин приложений?`)) {
+              window.open(app.storeUrl, '_blank');
+            }
+          }
+        }, 1500);
+      } else {
+        // No deep link — copy URL and open store
+        navigator.clipboard.writeText(subUrl).then(() => {
+          showToast('Ссылка скопирована!');
+          setTimeout(() => {
+            if (confirm(`Откройте ${app.name} и импортируйте ссылку из буфера обмена. Скачать ${app.name}?`)) {
+              window.open(app.storeUrl, '_blank');
+            }
+          }, 500);
+        }).catch(() => {
+          showToast('Не удалось скопировать');
+        });
       }
+    }
+
+    // ==========================================
+    // DOWNLOAD RAW CONFIG FILE
+    // ==========================================
+    async function downloadRawConfig() {
+      closeSheet();
+      if (!currentUser) return;
+
+      try {
+        showToast('Загрузка конфига...');
+        const data = await apiCall('get-config', { userId: currentUser.id });
+        if (!data.config) throw new Error('Пустая конфигурация');
+
+        // Download as file
+        const blob = new Blob([data.config], { type:'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'vpn_config.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast('Файл скачан! Импортируйте в VPN-клиент.');
+      } catch (err) {
+        showToast('Ошибка: ' + err.message);
+      }
+    }
+
+    // ==========================================
+    // COPY SUBSCRIPTION URL
+    // ==========================================
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      copySubUrl();
     });
 
-    function copyKey() {
-      const key = document.getElementById('keyDisplay').textContent;
-      navigator.clipboard.writeText(key).then(() => { alert("Ссылка скопирована!"); });
+    function copySubUrl() {
+      const url = getSubUrl();
+      if (!url) return showToast('Нет активной подписки');
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('Ссылка скопирована!');
+      }).catch(() => {
+        // Fallback for older browsers
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('Ссылка скопирована!');
+      });
     }
 
   </script>
