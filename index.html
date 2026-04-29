@@ -531,27 +531,47 @@
     // ==========================================
     // PAYMENT: Telegram Stars
     // ==========================================
-    document.getElementById('payBtn').addEventListener('click', async () => {
-      const token = await getToken();
-      if (!token) return toast('Сессия истекла, войдите заново');
+document.getElementById('payBtn').addEventListener('click', async () => {
+  // 1. СРАЗУ открываем окно — синхронная реакция на клик, popup-blocker пропускает
+  const win = window.open('about:blank', '_blank');
 
-      try {
-        const data = await apiCall(token, 'create-payment', { plan: '1m' });
-        currentPayToken = data.token;
+  const token = await getToken();
+  if (!token) {
+    if (win) win.close();
+    return toast('Сессия истекла, войдите заново');
+  }
 
-        // Открываем Telegram бота
-        window.open(data.botUrl, '_blank');
+  try {
+    const data = await apiCall(token, 'create-payment', { plan: '1m' });
+    currentPayToken = data.token;
 
-        // Показываем статус ожидания
-        document.getElementById('payStatus').style.display = 'block';
+    // 2. Очищаем pay-status от старых fallback-ссылок (если были)
+    const payStatus = document.getElementById('payStatus');
+    payStatus.innerHTML = '⏳ Ожидание оплаты... Завершите оплату в Telegram и вернитесь сюда.';
+    payStatus.style.display = 'block';
 
-        // Начинаем поллинг
-        startPaymentPolling(token, data.token);
+    // 3. Открываем бота в нужной вкладке
+    if (win && !win.closed) {
+      // popup открылся — подменяем URL
+      win.location.href = data.botUrl;
+    } else {
+      // popup заблокирован — показываем ссылку для ручного открытия
+      const fallbackBtn = document.createElement('a');
+      fallbackBtn.href = data.botUrl;
+      fallbackBtn.target = '_blank';
+      fallbackBtn.textContent = '👉 Открыть Telegram-бота';
+      fallbackBtn.style.cssText = 'display:block;margin-top:12px;color:var(--accent);text-decoration:underline;font-weight:600;';
+      payStatus.appendChild(fallbackBtn);
+    }
 
-      } catch(e) {
-        toast('Ошибка: ' + e.message);
-      }
-    });
+    // 4. Запускаем поллинг
+    startPaymentPolling(token, data.token);
+
+  } catch(e) {
+    if (win) win.close();
+    toast('Ошибка: ' + e.message);
+  }
+});
 
     function startPaymentPolling(accessToken, payToken) {
       if (pollTimer) clearInterval(pollTimer);
