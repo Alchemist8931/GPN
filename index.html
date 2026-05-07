@@ -187,6 +187,7 @@
       background:var(--bg-3);border:1px solid var(--border);
       margin-bottom:8px;cursor:pointer;transition:all var(--t);
       border:none;width:100%;text-align:left;font-family:inherit;color:var(--text);
+      text-decoration:none;
     }
     .app-row:hover{background:var(--bg-card);border-color:var(--border-2)}
     .app-row .aicon{
@@ -332,8 +333,8 @@
     // ==========================================
     const SUPABASE_URL  = 'https://fyynjpglyacgxjoknteh.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5eW5qcGdseWFjZ3hqb2tudGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4OTMwMDQsImV4cCI6MjA4NDQ2OTAwNH0.E3Km0BprWfvJxjXBiKbfLsM2cvlSmpOmknJWGTahnco';
-    const FUNCTION_URL  = `${SUPABASE_URL}/functions/v1/VPN_Aleksander`;
     const BOT_USERNAME  = 'VPN_HIVE_BOT';
+    const FUNCTION_URL  = `${SUPABASE_URL}/functions/v1/VPN_Aleksander`;
     // ==========================================
 
     let sb = null;
@@ -341,19 +342,13 @@
     let pollTimer = null;
     let currentPayToken = null;
 
-    // 🔑 Кэш VLESS-ссылки (получается с бэка через get-vless)
     let cachedVless = null;
     let cachedVlessAt = 0;
-    const VLESS_CACHE_MS = 60_000; // 1 минута
+    const VLESS_CACHE_MS = 60_000;
 
     try {
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
-        auth: {
-          autoRefreshToken: true,
-          persistSession: true,
-          detectSessionInUrl: true,
-          flowType: 'implicit',
-        }
+        auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, flowType: 'implicit' }
       });
     } catch(e) { console.error('Supabase init error:', e); }
 
@@ -391,7 +386,6 @@
         if ((profile.paid_until || 0) > oldPaidUntil) {
           if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
           document.getElementById('payStatus').style.display = 'none';
-          // Сбрасываем кэш VLESS — оплата изменила состояние
           cachedVless = null; cachedVlessAt = 0;
           if (oldPaidUntil > 0) toast('✅ Подписка продлена!');
           else toast('✅ Подписка активирована!');
@@ -479,10 +473,7 @@
     document.getElementById('payBtn').addEventListener('click', async () => {
       const win = window.open('about:blank', '_blank');
       const token = await getToken();
-      if (!token) {
-        if (win) win.close();
-        return toast('Сессия истекла, войдите заново');
-      }
+      if (!token) { if (win) win.close(); return toast('Сессия истекла, войдите заново'); }
       try {
         const data = await apiCall(token, 'create-payment', { plan: '1m' });
         currentPayToken = data.token;
@@ -534,13 +525,10 @@
     }
 
     // ==========================================
-    // 🔑 ПОЛУЧЕНИЕ VLESS-ССЫЛКИ С БЭКА
+    // 🔑 GET VLESS
     // ==========================================
     async function fetchVless() {
-      // Кэшируем на 1 минуту чтобы не дёргать бэк лишний раз
-      if (cachedVless && (Date.now() - cachedVlessAt) < VLESS_CACHE_MS) {
-        return cachedVless;
-      }
+      if (cachedVless && (Date.now() - cachedVlessAt) < VLESS_CACHE_MS) return cachedVless;
       const token = await getToken();
       if (!token) throw new Error('Сессия истекла');
       const data = await apiCall(token, 'get-vless', {});
@@ -556,11 +544,9 @@
     document.getElementById('downloadBtn').addEventListener('click', async () => {
       toast('Получаем ключ...');
       try {
-        await fetchVless();   // прогреваем кэш до открытия sheet
+        await fetchVless();
         openAppSheet();
-      } catch(e) {
-        toast('Ошибка: ' + e.message);
-      }
+      } catch(e) { toast('Ошибка: ' + e.message); }
     });
 
     document.getElementById('copyBtn').addEventListener('click', async () => {
@@ -569,9 +555,7 @@
         const vless = await fetchVless();
         await copyToClipboard(vless);
         toast('✅ VLESS-ключ скопирован!');
-      } catch(e) {
-        toast('Ошибка: ' + e.message);
-      }
+      } catch(e) { toast('Ошибка: ' + e.message); }
     });
 
     function getPlatform() {
@@ -589,8 +573,8 @@
         { name:'Hiddify', note:'Мощный open-source клиент', icon:'H', color:'#f59e0b', scheme:'hiddify://import/', storeUrl:'https://apps.apple.com/app/hiddify-proxy-vpn/id6596777532' },
       ],
       android: [
-        { name:'v2rayNG', note:'Рекомендуем, бесплатный', icon:'V', color:'#22c55e', scheme:'', storeUrl:'https://play.google.com/store/apps/details?id=com.v2ray.ang' },
-        { name:'Happ', note:'Простой и удобный', icon:'✦', color:'#ec4899', scheme:'', storeUrl:'https://play.google.com/store/search?q=happ+vpn&c=apps' },
+        { name:'v2rayNG', note:'Рекомендуем, бесплатный', icon:'V', color:'#22c55e', scheme:'vless-direct', storeUrl:'https://play.google.com/store/apps/details?id=com.v2ray.ang' },
+        { name:'Happ', note:'Простой и удобный', icon:'✦', color:'#ec4899', scheme:'vless-direct', storeUrl:'https://play.google.com/store/search?q=happ+vpn&c=apps' },
       ],
       mac: [
         { name:'Streisand', note:'Рекомендуем для macOS', icon:'S', color:'#6366f1', scheme:'streisand://import/', storeUrl:'https://apps.apple.com/app/streisand/id6450534064' },
@@ -609,15 +593,17 @@
       document.getElementById('sheetTitle').textContent = `Приложения для ${PLATFORM_LABELS[platform] || platform}`;
       const hasDeepLinks = apps.some(a => a.scheme);
       document.getElementById('sheetDesc').textContent = hasDeepLinks
-        ? 'Нажмите на приложение — конфигурация импортируется автоматически. Если приложение не установлено — откроется магазин.'
+        ? 'Нажмите на приложение — конфигурация импортируется автоматически. Если приложение не установлено — VLESS-ключ автоматически скопируется в буфер.'
         : 'Скопируйте VLESS-ключ и импортируйте в выбранное приложение.';
 
       const list = document.getElementById('appList');
       list.innerHTML = '';
 
       apps.forEach(app => {
-        const el = document.createElement('button');
+        // 🔑 Используем настоящую <a> ссылку — это надёжнее window.location.href для deeplinks
+        const el = document.createElement('a');
         el.className = 'app-row';
+        el.href = '#';
         el.innerHTML = `
           <div class="aicon" style="background:${app.color}">${app.icon}</div>
           <div style="flex:1">
@@ -626,7 +612,10 @@
           </div>
           <span class="arrow">→</span>
         `;
-        el.addEventListener('click', () => openInApp(app));
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          openInApp(app);
+        });
         list.appendChild(el);
       });
 
@@ -641,35 +630,79 @@
       if (e.target === e.currentTarget) closeSheet();
     });
 
+    // ==========================================
+    // 🚀 ОТКРЫТИЕ DEEPLINK С ПРАВИЛЬНОЙ ДЕТЕКЦИЕЙ
+    // ==========================================
     async function openInApp(app) {
       let vless = '';
       try { vless = await fetchVless(); }
       catch(e) { return toast('Ошибка: ' + e.message); }
 
+      // Всегда копируем в буфер — fallback если deeplink не сработает
+      await copyToClipboard(vless);
+
       closeSheet();
 
-      if (app.scheme) {
-        // Передаём VLESS-ссылку в приложение через deeplink
-        const deepLink = app.scheme + encodeURIComponent(vless);
-        const start = Date.now();
-        window.location.href = deepLink;
+      // Если у приложения нет deeplink — просто copy + инструкция
+      if (!app.scheme) {
+        toast('✅ Ключ скопирован — откройте ' + app.name);
         setTimeout(() => {
-          if (Date.now() - start < 2500) {
-            if (confirm(`${app.name} не установлен. Открыть магазин?`)) {
-              window.open(app.storeUrl, '_blank');
-            }
-          }
-        }, 1500);
-      } else {
-        // Нет deeplink (Windows/некоторые Android) — копируем + ведём в магазин
-        await copyToClipboard(vless);
-        toast('✅ VLESS-ключ скопирован!');
-        setTimeout(() => {
-          if (confirm(`Откройте ${app.name} и вставьте ключ из буфера обмена.\n\nСкачать ${app.name}?`)) {
+          if (confirm(`VLESS-ключ скопирован.\n\nОткройте ${app.name} и вставьте ключ.\n\nЕсли приложение не установлено — нажмите OK для перехода в магазин.`)) {
             window.open(app.storeUrl, '_blank');
           }
-        }, 600);
+        }, 800);
+        return;
       }
+
+      // Формируем deeplink
+      let deepLink;
+      if (app.scheme === 'vless-direct') {
+        // Используем сам VLESS URL — Android/iOS откроет chooser из установленных VPN-приложений
+        deepLink = vless;
+      } else {
+        // streisand://import/ENCODED_VLESS, hiddify://import/ENCODED_VLESS
+        deepLink = app.scheme + encodeURIComponent(vless);
+      }
+
+      // 🔍 Детектируем открылось ли приложение через visibilitychange
+      let appOpened = false;
+      const onLeave = () => { appOpened = true; };
+      document.addEventListener('visibilitychange', onLeave);
+      window.addEventListener('pagehide', onLeave);
+      window.addEventListener('blur', onLeave);
+
+      toast('Открываем ' + app.name + '...');
+
+      // Программный клик по <a> — более надёжный паттерн чем window.location.href
+      const a = document.createElement('a');
+      a.href = deepLink;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // Через 2 секунды проверяем — открылось ли приложение
+      setTimeout(() => {
+        document.removeEventListener('visibilitychange', onLeave);
+        window.removeEventListener('pagehide', onLeave);
+        window.removeEventListener('blur', onLeave);
+
+        // Если страница ушла в фон (document.hidden ИЛИ был зафиксирован переход) — приложение открылось
+        if (appOpened || document.hidden) {
+          // ✅ Приложение открылось — ничего не делаем
+          return;
+        }
+
+        // ❌ Приложение не открылось — вероятно не установлено
+        // Показываем мягкое предложение вместо confirm
+        const goStore = confirm(
+          `Похоже, ${app.name} не установлен.\n\n` +
+          `VLESS-ключ скопирован в буфер обмена. ` +
+          `После установки приложения вставьте его вручную.\n\n` +
+          `Открыть магазин для установки?`
+        );
+        if (goStore) window.open(app.storeUrl, '_blank');
+      }, 2000);
     }
 
     async function copyToClipboard(text) {
@@ -693,12 +726,8 @@
       showScreen('auth');
     }
 
-    function toggleUserMenu() {
-      document.getElementById('userMenu').classList.toggle('visible');
-    }
-    function closeUserMenu() {
-      document.getElementById('userMenu').classList.remove('visible');
-    }
+    function toggleUserMenu() { document.getElementById('userMenu').classList.toggle('visible'); }
+    function closeUserMenu() { document.getElementById('userMenu').classList.remove('visible'); }
     document.addEventListener('click', (e) => {
       const pill = document.getElementById('userPill');
       const menu = document.getElementById('userMenu');
