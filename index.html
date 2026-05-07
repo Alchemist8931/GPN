@@ -343,6 +343,7 @@
     let currentPayToken = null;
 
     let cachedVless = null;
+    let cachedSub = null;
     let cachedVlessAt = 0;
     const VLESS_CACHE_MS = 60_000;
 
@@ -568,13 +569,14 @@
     }
 
     const VPN_APPS = {
-      ios: [
+ ios: [
   {
     name: 'V2Box',
     note: 'Бесплатный, простой',
     icon: 'V',
     color: '#3b82f6',
-    scheme: 'v2box://install-config?url=',
+    scheme: 'v2box://install-sub?url=',
+    linkType: 'subscription',     // ← передаём sub URL
     encoding: 'url',
     storeUrl: 'https://apps.apple.com/app/v2box-v2ray-client/id6446814690'
   },
@@ -584,6 +586,7 @@
     icon: '✦',
     color: '#ec4899',
     scheme: 'happ://add/',
+    linkType: 'vless',           // Happ работает с VLESS напрямую
     encoding: 'base64',
     storeUrl: 'https://apps.apple.com/app/happ-proxy-utility/id6504287215'
   },
@@ -666,14 +669,18 @@
     // 🚀 ОТКРЫТИЕ DEEPLINK С ПРАВИЛЬНОЙ ДЕТЕКЦИЕЙ
     // ==========================================
     async function openInApp(app) {
-      let vless = '';
-      try { vless = await fetchVless(); }
-      catch(e) { return toast('Ошибка: ' + e.message); }
+let vless = '';
+let subUrl = '';
+try {
+  const data = await fetchVlessAndSub();   // см. ниже
+  vless = data.vless;
+  subUrl = data.subUrl;
+} catch(e) { return toast('Ошибка: ' + e.message); }
 
-      // Всегда копируем в буфер — fallback если deeplink не сработает
-      await copyToClipboard(vless);
+// Всегда копируем VLESS в буфер как fallback
+await copyToClipboard(vless);
 
-      closeSheet();
+closeSheet();
 
       // Если у приложения нет deeplink — просто copy + инструкция
       if (!app.scheme) {
@@ -686,18 +693,19 @@
         return;
       }
 
-      // Формируем deeplink
+// Выбираем что передать в deeplink
+const linkContent = (app.linkType === 'subscription') ? subUrl : vless;
+
+// Формируем deeplink
 let deepLink;
 if (app.scheme === 'vless-direct') {
-  // Прямая VLESS-ссылка — Android покажет chooser из обработчиков vless://
   deepLink = vless;
 } else if (app.encoding === 'base64') {
-  // Happ и подобные — base64-кодирование без URL-encoding
-  deepLink = app.scheme + btoa(vless);
+  deepLink = app.scheme + btoa(linkContent);
 } else {
-  // Streisand, Hiddify, v2RayTun, v2rayNG — стандартный URL-encoding
-  deepLink = app.scheme + encodeURIComponent(vless);
+  deepLink = app.scheme + encodeURIComponent(linkContent);
 }
+
 
       // 🔍 Детектируем открылось ли приложение через visibilitychange
       let appOpened = false;
@@ -739,6 +747,20 @@ if (app.scheme === 'vless-direct') {
         if (goStore) window.open(app.storeUrl, '_blank');
       }, 2000);
     }
+
+    async function fetchVlessAndSub() {
+  if (cachedVless && cachedSub && (Date.now() - cachedVlessAt) < VLESS_CACHE_MS) {
+    return { vless: cachedVless, subUrl: cachedSub };
+  }
+  const token = await getToken();
+  if (!token) throw new Error('Сессия истекла');
+  const data = await apiCall(token, 'get-vless', {});
+  if (!data.primary) throw new Error('Ссылка не получена');
+  cachedVless = data.primary;
+  cachedSub = data.subUrl || '';
+  cachedVlessAt = Date.now();
+  return { vless: cachedVless, subUrl: cachedSub };
+}
 
     async function copyToClipboard(text) {
       try {
