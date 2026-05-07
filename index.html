@@ -333,13 +333,13 @@
 
   <script>
     // ==========================================
-    // ⚙️  CONFIGURATION
+    // ⚙️  CONFIGURATION — НОВЫЕ URL БЕЗ x1.
     // ==========================================
     const SUPABASE_URL  = 'https://fyynjpglyacgxjoknteh.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5eW5qcGdseWFjZ3hqb2tudGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4OTMwMDQsImV4cCI6MjA4NDQ2OTAwNH0.E3Km0BprWfvJxjXBiKbfLsM2cvlSmpOmknJWGTahnco';
-    const FUNCTION_URL  = `${SUPABASE_URL}/functions/v1/VPN_Aleksander`;
     const SUB_BASE      = 'https://a2x2.top:14018/sub';
     const BOT_USERNAME  = 'VPN_HIVE_BOT';
+    const FUNCTION_URL  = `${SUPABASE_URL}/functions/v1/VPN_Aleksander`;
     // ==========================================
 
     let sb = null;
@@ -358,9 +358,6 @@
       });
     } catch(e) { console.error('Supabase init error:', e); }
 
-    // ==========================================
-    // ON LOAD
-    // ==========================================
     window.addEventListener('load', async () => {
       await new Promise(r => setTimeout(r, 600));
 
@@ -385,24 +382,12 @@
       });
     });
 
-    // ==========================================
-    // 🔄 АВТО-ОБНОВЛЕНИЕ ПРОФИЛЯ
-    // ==========================================
-    // Когда пользователь возвращается на вкладку (например, после оплаты в Telegram),
-    // автоматически тянем свежие данные из БД
+    // Авто-обновление при возврате на вкладку
     document.addEventListener('visibilitychange', async () => {
-      if (!document.hidden && profile) {
-        console.log('[visibility] page visible, refreshing profile...');
-        await refreshProfile();
-      }
+      if (!document.hidden && profile) await refreshProfile();
     });
-
-    // Также перепроверяем при focus (некоторые браузеры не шлют visibilitychange)
     window.addEventListener('focus', async () => {
-      if (profile) {
-        console.log('[focus] window focus, refreshing profile...');
-        await refreshProfile();
-      }
+      if (profile) await refreshProfile();
     });
 
     async function refreshProfile() {
@@ -413,8 +398,7 @@
         const oldPaidUntil = profile?.paid_until || 0;
         profile = data.profile;
         updateUI();
-        // Если paid_until увеличился — оплата прошла!
-        if ((profile.paid_until || 0) > oldPaidUntil && oldPaidUntil >= 0) {
+        if ((profile.paid_until || 0) > oldPaidUntil) {
           if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
           document.getElementById('payStatus').style.display = 'none';
           if (oldPaidUntil > 0) toast('✅ Подписка продлена!');
@@ -423,7 +407,6 @@
       } catch(e) { console.error('refreshProfile error:', e); }
     }
 
-    // ==========================================
     function showScreen(name) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
       document.getElementById(name === 'auth' ? 'authScreen' : 'appScreen').classList.add('visible');
@@ -507,7 +490,6 @@
     // ==========================================
     document.getElementById('payBtn').addEventListener('click', async () => {
       const win = window.open('about:blank', '_blank');
-
       const token = await getToken();
       if (!token) {
         if (win) win.close();
@@ -572,10 +554,40 @@
     }
 
     // ==========================================
+    // 🔄 Принудительная синхронизация с 3x-ui
+    // ==========================================
+    async function ensureXuiSync() {
+      const token = await getToken();
+      if (!token) return false;
+      try {
+        const data = await apiCall(token, 'sync-xui', {});
+        if (data.subUrl) {
+          // Бэк может вернуть свежий subUrl с актуальным sub_id
+          if (profile) profile.sub_id = data.subId || profile.sub_id;
+        }
+        return true;
+      } catch(e) {
+        console.error('sync-xui failed:', e);
+        toast('⚠️ Не удалось синхронизироваться с VPN-сервером: ' + e.message);
+        return false;
+      }
+    }
+
+    // ==========================================
     // DOWNLOAD / COPY
     // ==========================================
-    document.getElementById('downloadBtn').addEventListener('click', () => openAppSheet());
-    document.getElementById('copyBtn').addEventListener('click', () => copySubUrl());
+    document.getElementById('downloadBtn').addEventListener('click', async () => {
+      // Синхронизируемся с 3x-ui перед открытием sheet
+      toast('Подготовка...');
+      await ensureXuiSync();
+      openAppSheet();
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      toast('Подготовка...');
+      await ensureXuiSync();
+      copySubUrl();
+    });
 
     function getPlatform() {
       const ua = navigator.userAgent || '';
