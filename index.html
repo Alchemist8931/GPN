@@ -45,7 +45,6 @@
       background:radial-gradient(ellipse,rgba(34,211,238,.06) 0%,transparent 70%);
       pointer-events:none;z-index:0;
     }
-
     .preloader{
       position:fixed;inset:0;background:var(--bg);
       display:flex;align-items:center;justify-content:center;
@@ -75,7 +74,7 @@
       -webkit-background-clip:text;-webkit-text-fill-color:transparent;
     }
     @keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-    .auth-logo p{font-size:15px;color:var(--text-3);margin-top:8px;font-weight:300;letter-spacing:.02em}
+    .auth-logo p{font-size:15px;color:var(--text-3);margin-top:8px;font-weight:300}
 
     .google-btn{
       display:flex;align-items:center;gap:14px;
@@ -214,6 +213,7 @@
       padding:12px 24px;border-radius:12px;font-size:13px;font-weight:500;
       z-index:9999;opacity:0;transition:all .35s ease;
       box-shadow:0 8px 32px rgba(0,0,0,.4);
+      max-width:90vw;
     }
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
@@ -243,7 +243,6 @@
 <body>
 
   <div class="glow"></div>
-
   <div class="preloader" id="preloader"><div class="ring"></div></div>
 
   <!-- AUTH SCREEN -->
@@ -252,16 +251,12 @@
       <h1>GPN</h1>
       <p>Быстрый и приватный VPN</p>
     </div>
-
     <button class="google-btn" id="googleBtn" onclick="signInWithGoogle()">
       <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       <span class="g-text">Войти через Google</span>
       <div class="spin-small"></div>
     </button>
-
-    <div class="auth-footer">
-      Авторизуясь, вы получаете доступ к управлению VPN-подпиской
-    </div>
+    <div class="auth-footer">Авторизуясь, вы получаете доступ к управлению VPN-подпиской</div>
   </div>
 
   <!-- APP SCREEN -->
@@ -302,16 +297,16 @@
       <button class="act-btn" id="downloadBtn" disabled>
         <div class="ico dl">📥</div>
         <div>
-          <div class="act-title">Скачать конфигурацию</div>
-          <div class="act-desc">Установить VPN-профиль на устройство</div>
+          <div class="act-title">Установить на устройство</div>
+          <div class="act-desc">Открыть конфигурацию в VPN-приложении</div>
         </div>
       </button>
 
       <button class="act-btn" id="copyBtn" disabled>
         <div class="ico cp">📋</div>
         <div>
-          <div class="act-title">Скопировать Subscription URL</div>
-          <div class="act-desc">Для ручного импорта в любой клиент</div>
+          <div class="act-title">Скопировать VLESS-ключ</div>
+          <div class="act-desc">Прямая ссылка для импорта в любой клиент</div>
         </div>
       </button>
     </div>
@@ -333,19 +328,23 @@
 
   <script>
     // ==========================================
-    // ⚙️  CONFIGURATION — НОВЫЕ URL БЕЗ x1.
+    // ⚙️  CONFIGURATION
     // ==========================================
     const SUPABASE_URL  = 'https://fyynjpglyacgxjoknteh.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5eW5qcGdseWFjZ3hqb2tudGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4OTMwMDQsImV4cCI6MjA4NDQ2OTAwNH0.E3Km0BprWfvJxjXBiKbfLsM2cvlSmpOmknJWGTahnco';
-    const SUB_BASE      = 'https://a2x2.top:14018/sub';
-    const BOT_USERNAME  = 'VPN_HIVE_BOT';
     const FUNCTION_URL  = `${SUPABASE_URL}/functions/v1/VPN_Aleksander`;
+    const BOT_USERNAME  = 'VPN_HIVE_BOT';
     // ==========================================
 
     let sb = null;
     let profile = null;
     let pollTimer = null;
     let currentPayToken = null;
+
+    // 🔑 Кэш VLESS-ссылки (получается с бэка через get-vless)
+    let cachedVless = null;
+    let cachedVlessAt = 0;
+    const VLESS_CACHE_MS = 60_000; // 1 минута
 
     try {
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
@@ -360,29 +359,20 @@
 
     window.addEventListener('load', async () => {
       await new Promise(r => setTimeout(r, 600));
-
       if (!sb) {
         document.getElementById('preloader').classList.add('hidden');
-        showScreen('auth');
-        return;
+        showScreen('auth'); return;
       }
-
       const { data: { session } } = await sb.auth.getSession();
       document.getElementById('preloader').classList.add('hidden');
-
       if (session) await enterApp(session);
       else showScreen('auth');
-
       sb.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session && !profile) await enterApp(session);
-        if (event === 'SIGNED_OUT') {
-          profile = null;
-          showScreen('auth');
-        }
+        if (event === 'SIGNED_OUT') { profile = null; showScreen('auth'); }
       });
     });
 
-    // Авто-обновление при возврате на вкладку
     document.addEventListener('visibilitychange', async () => {
       if (!document.hidden && profile) await refreshProfile();
     });
@@ -401,6 +391,8 @@
         if ((profile.paid_until || 0) > oldPaidUntil) {
           if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
           document.getElementById('payStatus').style.display = 'none';
+          // Сбрасываем кэш VLESS — оплата изменила состояние
+          cachedVless = null; cachedVlessAt = 0;
           if (oldPaidUntil > 0) toast('✅ Подписка продлена!');
           else toast('✅ Подписка активирована!');
         }
@@ -433,7 +425,6 @@
       const meta = user.user_metadata || {};
       document.getElementById('userName').textContent = meta.full_name || meta.name || user.email || '';
       document.getElementById('userAvatar').src = meta.avatar_url || meta.picture || '';
-
       try {
         const data = await apiCall(session.access_token, 'get-profile', {});
         profile = data.profile;
@@ -471,16 +462,13 @@
       const pu = profile.paid_until || 0;
       const days = Math.max(0, Math.ceil((pu - now) / 86400));
       const active = days > 0;
-
       const chip = document.getElementById('statusChip');
       chip.className = 'chip ' + (active ? 'active' : 'inactive');
       document.getElementById('statusText').textContent = active ? 'Активна' : 'Неактивна';
       document.getElementById('daysCount').textContent = days;
-
       document.getElementById('payTitle').textContent = active
         ? 'Продлить через Telegram Stars'
         : 'Оплатить через Telegram Stars';
-
       document.getElementById('downloadBtn').disabled = !active;
       document.getElementById('copyBtn').disabled = !active;
     }
@@ -495,15 +483,12 @@
         if (win) win.close();
         return toast('Сессия истекла, войдите заново');
       }
-
       try {
         const data = await apiCall(token, 'create-payment', { plan: '1m' });
         currentPayToken = data.token;
-
         const payStatus = document.getElementById('payStatus');
         payStatus.innerHTML = '⏳ Ожидание оплаты... Завершите оплату в Telegram и вернитесь сюда.';
         payStatus.style.display = 'block';
-
         if (win && !win.closed) {
           win.location.href = data.botUrl;
         } else {
@@ -514,7 +499,6 @@
           fallbackBtn.style.cssText = 'display:block;margin-top:12px;color:var(--accent);text-decoration:underline;font-weight:600;';
           payStatus.appendChild(fallbackBtn);
         }
-
         startPaymentPolling(token, data.token);
       } catch(e) {
         if (win) win.close();
@@ -526,26 +510,22 @@
       if (pollTimer) clearInterval(pollTimer);
       let attempts = 0;
       const maxAttempts = 120;
-
       pollTimer = setInterval(async () => {
         attempts++;
         if (attempts > maxAttempts) {
-          clearInterval(pollTimer);
-          pollTimer = null;
+          clearInterval(pollTimer); pollTimer = null;
           document.getElementById('payStatus').style.display = 'none';
           return;
         }
-
         try {
           const freshToken = await getToken();
           if (!freshToken) return;
           const data = await apiCall(freshToken, 'check-payment', { token: payToken });
-
           if (data.paid) {
-            clearInterval(pollTimer);
-            pollTimer = null;
+            clearInterval(pollTimer); pollTimer = null;
             document.getElementById('payStatus').style.display = 'none';
             profile = data.profile;
+            cachedVless = null; cachedVlessAt = 0;
             updateUI();
             toast('✅ Оплата прошла! Подписка активна.');
           }
@@ -554,39 +534,44 @@
     }
 
     // ==========================================
-    // 🔄 Принудительная синхронизация с 3x-ui
+    // 🔑 ПОЛУЧЕНИЕ VLESS-ССЫЛКИ С БЭКА
     // ==========================================
-    async function ensureXuiSync() {
-      const token = await getToken();
-      if (!token) return false;
-      try {
-        const data = await apiCall(token, 'sync-xui', {});
-        if (data.subUrl) {
-          // Бэк может вернуть свежий subUrl с актуальным sub_id
-          if (profile) profile.sub_id = data.subId || profile.sub_id;
-        }
-        return true;
-      } catch(e) {
-        console.error('sync-xui failed:', e);
-        toast('⚠️ Не удалось синхронизироваться с VPN-сервером: ' + e.message);
-        return false;
+    async function fetchVless() {
+      // Кэшируем на 1 минуту чтобы не дёргать бэк лишний раз
+      if (cachedVless && (Date.now() - cachedVlessAt) < VLESS_CACHE_MS) {
+        return cachedVless;
       }
+      const token = await getToken();
+      if (!token) throw new Error('Сессия истекла');
+      const data = await apiCall(token, 'get-vless', {});
+      if (!data.primary) throw new Error('Ссылка не получена');
+      cachedVless = data.primary;
+      cachedVlessAt = Date.now();
+      return cachedVless;
     }
 
     // ==========================================
     // DOWNLOAD / COPY
     // ==========================================
     document.getElementById('downloadBtn').addEventListener('click', async () => {
-      // Синхронизируемся с 3x-ui перед открытием sheet
-      toast('Подготовка...');
-      await ensureXuiSync();
-      openAppSheet();
+      toast('Получаем ключ...');
+      try {
+        await fetchVless();   // прогреваем кэш до открытия sheet
+        openAppSheet();
+      } catch(e) {
+        toast('Ошибка: ' + e.message);
+      }
     });
 
     document.getElementById('copyBtn').addEventListener('click', async () => {
-      toast('Подготовка...');
-      await ensureXuiSync();
-      copySubUrl();
+      toast('Получаем ключ...');
+      try {
+        const vless = await fetchVless();
+        await copyToClipboard(vless);
+        toast('✅ VLESS-ключ скопирован!');
+      } catch(e) {
+        toast('Ошибка: ' + e.message);
+      }
     });
 
     function getPlatform() {
@@ -604,7 +589,7 @@
         { name:'Hiddify', note:'Мощный open-source клиент', icon:'H', color:'#f59e0b', scheme:'hiddify://import/', storeUrl:'https://apps.apple.com/app/hiddify-proxy-vpn/id6596777532' },
       ],
       android: [
-        { name:'v2rayNG', note:'Рекомендуем, бесплатный', icon:'V', color:'#22c55e', scheme:'v2rayng://install-config?url=', storeUrl:'https://play.google.com/store/apps/details?id=com.v2ray.ang' },
+        { name:'v2rayNG', note:'Рекомендуем, бесплатный', icon:'V', color:'#22c55e', scheme:'', storeUrl:'https://play.google.com/store/apps/details?id=com.v2ray.ang' },
         { name:'Happ', note:'Простой и удобный', icon:'✦', color:'#ec4899', scheme:'', storeUrl:'https://play.google.com/store/search?q=happ+vpn&c=apps' },
       ],
       mac: [
@@ -622,11 +607,10 @@
       const platform = getPlatform();
       const apps = VPN_APPS[platform] || VPN_APPS.mac;
       document.getElementById('sheetTitle').textContent = `Приложения для ${PLATFORM_LABELS[platform] || platform}`;
-
       const hasDeepLinks = apps.some(a => a.scheme);
       document.getElementById('sheetDesc').textContent = hasDeepLinks
-        ? 'Нажмите на приложение для автоматического импорта конфигурации.'
-        : 'Скопируйте ссылку и импортируйте в выбранное приложение.';
+        ? 'Нажмите на приложение — конфигурация импортируется автоматически. Если приложение не установлено — откроется магазин.'
+        : 'Скопируйте VLESS-ключ и импортируйте в выбранное приложение.';
 
       const list = document.getElementById('appList');
       list.innerHTML = '';
@@ -646,21 +630,6 @@
         list.appendChild(el);
       });
 
-      const dlBtn = document.createElement('button');
-      dlBtn.className = 'app-row';
-      dlBtn.style.marginTop = '8px';
-      dlBtn.style.borderTop = '1px dashed var(--border)';
-      dlBtn.innerHTML = `
-        <div class="aicon" style="background:var(--bg-card);color:var(--text-2);border:1px solid var(--border)">📄</div>
-        <div style="flex:1">
-          <div class="aname">Скачать raw-файл</div>
-          <div class="anote">Универсальный способ</div>
-        </div>
-        <span class="arrow">→</span>
-      `;
-      dlBtn.addEventListener('click', downloadRawConfig);
-      list.appendChild(dlBtn);
-
       document.getElementById('sheetOverlay').classList.add('visible');
     }
 
@@ -672,13 +641,16 @@
       if (e.target === e.currentTarget) closeSheet();
     });
 
-    function openInApp(app) {
-      const subUrl = getSubUrl();
-      if (!subUrl) return toast('Нет активной подписки');
+    async function openInApp(app) {
+      let vless = '';
+      try { vless = await fetchVless(); }
+      catch(e) { return toast('Ошибка: ' + e.message); }
+
       closeSheet();
 
       if (app.scheme) {
-        const deepLink = app.scheme + encodeURIComponent(subUrl);
+        // Передаём VLESS-ссылку в приложение через deeplink
+        const deepLink = app.scheme + encodeURIComponent(vless);
         const start = Date.now();
         window.location.href = deepLink;
         setTimeout(() => {
@@ -689,65 +661,34 @@
           }
         }, 1500);
       } else {
-        navigator.clipboard.writeText(subUrl).then(() => {
-          toast('Ссылка скопирована!');
-          setTimeout(() => {
-            if (confirm(`Откройте ${app.name} и импортируйте из буфера. Скачать ${app.name}?`)) {
-              window.open(app.storeUrl, '_blank');
-            }
-          }, 400);
-        }).catch(() => toast('Не удалось скопировать'));
+        // Нет deeplink (Windows/некоторые Android) — копируем + ведём в магазин
+        await copyToClipboard(vless);
+        toast('✅ VLESS-ключ скопирован!');
+        setTimeout(() => {
+          if (confirm(`Откройте ${app.name} и вставьте ключ из буфера обмена.\n\nСкачать ${app.name}?`)) {
+            window.open(app.storeUrl, '_blank');
+          }
+        }, 600);
       }
     }
 
-    async function downloadRawConfig() {
-      closeSheet();
-      const token = await getToken();
-      if (!token) return toast('Сессия истекла');
-
+    async function copyToClipboard(text) {
       try {
-        toast('Загрузка...');
-        const data = await apiCall(token, 'get-config', {});
-        if (!data.config) throw new Error('Пустая конфигурация');
-
-        const blob = new Blob([data.config], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'vpn_config.txt';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        toast('Файл скачан!');
-      } catch(e) {
-        toast('Ошибка: ' + e.message);
+        await navigator.clipboard.writeText(text);
+      } catch (_) {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.cssText = 'position:fixed;left:-9999px';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
       }
-    }
-
-    function getSubUrl() {
-      return profile?.sub_id ? `${SUB_BASE}/${profile.sub_id}` : '';
-    }
-
-    function copySubUrl() {
-      const url = getSubUrl();
-      if (!url) return toast('Нет активной подписки');
-      navigator.clipboard.writeText(url)
-        .then(() => toast('Ссылка скопирована!'))
-        .catch(() => {
-          const ta = document.createElement('textarea');
-          ta.value = url; ta.style.cssText = 'position:fixed;left:-9999px';
-          document.body.appendChild(ta); ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-          toast('Ссылка скопирована!');
-        });
     }
 
     async function logout() {
       closeUserMenu();
       if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
       profile = null;
+      cachedVless = null; cachedVlessAt = 0;
       await sb.auth.signOut();
       showScreen('auth');
     }
