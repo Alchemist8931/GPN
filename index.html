@@ -573,9 +573,25 @@
         { name:'Hiddify', note:'Мощный open-source клиент', icon:'H', color:'#f59e0b', scheme:'hiddify://import/', storeUrl:'https://apps.apple.com/app/hiddify-proxy-vpn/id6596777532' },
       ],
       android: [
-        { name:'v2RayTun', note:'Рекомендуем, бесплатный', icon:'V', color:'#22c55e', scheme:'vless-direct', storeUrl:'https://play.google.com/store/apps/details?id=com.v2raytun.android&pcampaignid=web_share' },
-        { name:'Happ', note:'Простой и удобный', icon:'✦', color:'#ec4899', scheme:'vless-direct', storeUrl:'https://play.google.com/store/apps/details?id=com.happproxy&pcampaignid=web_share' },
-      ],
+  {
+    name: 'v2RayTun',
+    note: 'Рекомендуем, бесплатный',
+    icon: 'V',
+    color: '#22c55e',
+    scheme: 'v2raytun://install-config?url=',
+    encoding: 'url',           // обычный URL-encoding
+    storeUrl: 'https://play.google.com/store/apps/details?id=com.v2raytun.android'
+  },
+  {
+    name: 'Happ',
+    note: 'Простой и удобный',
+    icon: '✦',
+    color: '#ec4899',
+    scheme: 'happ://add/',
+    encoding: 'base64',        // base64 без URL-encoding
+    storeUrl: 'https://play.google.com/store/apps/details?id=com.happproxy'
+  },
+],
       mac: [
         { name:'Streisand', note:'Рекомендуем для macOS', icon:'S', color:'#6366f1', scheme:'streisand://import/', storeUrl:'https://apps.apple.com/app/streisand/id6450534064' },
         { name:'V2RayXS', note:'Легковесный GUI-клиент', icon:'X', color:'#14b8a6', scheme:'', storeUrl:'https://github.com/tzmax/V2RayXS/releases' },
@@ -655,14 +671,17 @@
       }
 
       // Формируем deeplink
-      let deepLink;
-      if (app.scheme === 'vless-direct') {
-        // Используем сам VLESS URL — Android/iOS откроет chooser из установленных VPN-приложений
-        deepLink = vless;
-      } else {
-        // streisand://import/ENCODED_VLESS, hiddify://import/ENCODED_VLESS
-        deepLink = app.scheme + encodeURIComponent(vless);
-      }
+let deepLink;
+if (app.scheme === 'vless-direct') {
+  // Прямая VLESS-ссылка — Android покажет chooser из обработчиков vless://
+  deepLink = vless;
+} else if (app.encoding === 'base64') {
+  // Happ и подобные — base64-кодирование без URL-encoding
+  deepLink = app.scheme + btoa(vless);
+} else {
+  // Streisand, Hiddify, v2RayTun, v2rayNG — стандартный URL-encoding
+  deepLink = app.scheme + encodeURIComponent(vless);
+}
 
       // 🔍 Детектируем открылось ли приложение через visibilitychange
       let appOpened = false;
