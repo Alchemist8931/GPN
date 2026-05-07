@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0a0a0a">
-  <title>VPN HIVE</title>
+  <title>GPN — Secure VPN</title>
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <meta http-equiv="Pragma" content="no-cache"/>
@@ -17,25 +17,14 @@
 
   <style>
     :root {
-      --bg:       #09090b;
-      --bg-2:     #111113;
-      --bg-3:     #19191d;
-      --bg-card:  #141416;
-      --border:   #27272a;
-      --border-2: #3f3f46;
-      --text:     #fafafa;
-      --text-2:   #a1a1aa;
-      --text-3:   #71717a;
-      --accent:   #22d3ee;
-      --accent-2: #06b6d4;
-      --green:    #34d399;
-      --green-bg: rgba(52,211,153,.1);
-      --red:      #f87171;
-      --red-bg:   rgba(248,113,113,.1);
-      --amber:    #fbbf24;
-      --amber-bg: rgba(251,191,36,.08);
-      --radius:   14px;
-      --t:        .3s cubic-bezier(.4,0,.2,1);
+      --bg:#09090b; --bg-2:#111113; --bg-3:#19191d; --bg-card:#141416;
+      --border:#27272a; --border-2:#3f3f46;
+      --text:#fafafa; --text-2:#a1a1aa; --text-3:#71717a;
+      --accent:#22d3ee; --accent-2:#06b6d4;
+      --green:#34d399; --green-bg:rgba(52,211,153,.1);
+      --red:#f87171; --red-bg:rgba(248,113,113,.1);
+      --amber:#fbbf24; --amber-bg:rgba(251,191,36,.08);
+      --radius:14px; --t:.3s cubic-bezier(.4,0,.2,1);
     }
     *{margin:0;padding:0;box-sizing:border-box}
     html{height:100%}
@@ -45,15 +34,11 @@
       min-height:100%;display:flex;flex-direction:column;
       -webkit-font-smoothing:antialiased;overflow-x:hidden;
     }
-
-    /* ===== NOISE TEXTURE OVERLAY ===== */
     body::before{
       content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
       opacity:.03;
       background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     }
-
-    /* ===== SUBTLE GLOW ===== */
     .glow{
       position:fixed;top:-30vh;left:50%;transform:translateX(-50%);
       width:80vw;height:60vh;border-radius:50%;
@@ -61,7 +46,6 @@
       pointer-events:none;z-index:0;
     }
 
-    /* ===== PRELOADER ===== */
     .preloader{
       position:fixed;inset:0;background:var(--bg);
       display:flex;align-items:center;justify-content:center;
@@ -75,7 +59,6 @@
     }
     @keyframes spin{to{transform:rotate(360deg)}}
 
-    /* ===== SCREENS ===== */
     .screen{
       flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
       padding:24px;position:relative;z-index:1;
@@ -84,7 +67,6 @@
     .screen.visible{opacity:1;visibility:visible;transition:opacity .5s ease,visibility 0s linear 0s}
     .screen.app-screen{justify-content:flex-start;padding-top:56px}
 
-    /* ===== AUTH SCREEN ===== */
     .auth-logo{margin-bottom:48px;text-align:center}
     .auth-logo h1{
       font-size:42px;font-weight:800;letter-spacing:-.04em;
@@ -112,7 +94,6 @@
 
     .auth-footer{margin-top:32px;font-size:12px;color:var(--text-3);text-align:center;max-width:280px;line-height:1.6}
 
-    /* ===== APP SCREEN ===== */
     .top-bar{
       display:flex;align-items:center;justify-content:space-between;
       width:100%;max-width:440px;margin-bottom:28px;
@@ -127,7 +108,6 @@
     .user-pill img{width:28px;height:28px;border-radius:50%;object-fit:cover}
     .user-pill .uname{font-size:12px;color:var(--text-2);font-weight:500;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-    /* Status Card */
     .status-card{
       width:100%;max-width:440px;background:var(--bg-card);
       border:1px solid var(--border);border-radius:20px;
@@ -151,7 +131,6 @@
     .days-num{font-size:48px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--text)}
     .days-label{font-size:13px;color:var(--text-3);margin-top:4px;font-weight:300}
 
-    /* Action Buttons */
     .actions{width:100%;max-width:440px;display:flex;flex-direction:column;gap:10px}
 
     .act-btn{
@@ -174,7 +153,6 @@
     .act-title{font-size:14px;font-weight:600}
     .act-desc{font-size:12px;color:var(--text-3);margin-top:2px}
 
-    /* Payment status bar */
     .pay-status{
       width:100%;max-width:440px;margin-top:12px;
       padding:14px 18px;background:var(--amber-bg);
@@ -184,7 +162,6 @@
     }
     @keyframes pulse-border{0%,100%{border-color:rgba(251,191,36,.15)}50%{border-color:rgba(251,191,36,.35)}}
 
-    /* ===== BOTTOM SHEET ===== */
     .overlay{
       position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
       z-index:5000;opacity:0;visibility:hidden;
@@ -201,7 +178,6 @@
       max-height:80vh;overflow-y:auto;
     }
     .overlay.visible .sheet{transform:translateY(0)}
-
     .sheet-handle{width:36px;height:4px;background:var(--border-2);border-radius:2px;margin:0 auto 20px}
     .sheet h3{font-size:17px;font-weight:700;margin-bottom:6px}
     .sheet .sdesc{font-size:13px;color:var(--text-3);margin-bottom:20px;line-height:1.6}
@@ -232,7 +208,6 @@
     }
     .sheet-close:hover{border-color:var(--border-2);color:var(--text-2)}
 
-    /* ===== TOAST ===== */
     .toast{
       position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(80px);
       background:var(--bg-card);border:1px solid var(--border);color:var(--text);
@@ -242,7 +217,6 @@
     }
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-    /* ===== USER MENU ===== */
     .user-menu{
       position:fixed;top:70px;right:24px;
       background:var(--bg-2);border:1px solid var(--border);
@@ -270,13 +244,12 @@
 
   <div class="glow"></div>
 
-  <!-- PRELOADER -->
   <div class="preloader" id="preloader"><div class="ring"></div></div>
 
-  <!-- ===== AUTH SCREEN ===== -->
+  <!-- AUTH SCREEN -->
   <div class="screen" id="authScreen">
     <div class="auth-logo">
-      <h1>VPN HIVE</h1>
+      <h1>GPN</h1>
       <p>Быстрый и приватный VPN</p>
     </div>
 
@@ -291,22 +264,20 @@
     </div>
   </div>
 
-  <!-- ===== APP SCREEN ===== -->
+  <!-- APP SCREEN -->
   <div class="screen app-screen" id="appScreen">
     <div class="top-bar">
-      <div class="logo">VPN</div>
+      <div class="logo">GPN</div>
       <div class="user-pill" id="userPill" onclick="toggleUserMenu()">
         <img id="userAvatar" src="" alt=""/>
         <span class="uname" id="userName"></span>
       </div>
     </div>
 
-    <!-- User Menu -->
     <div class="user-menu" id="userMenu">
       <button onclick="logout()">Выйти из аккаунта</button>
     </div>
 
-    <!-- Status -->
     <div class="status-card">
       <div class="status-row">
         <span class="status-label">Подписка</span>
@@ -319,7 +290,6 @@
       <div class="days-label">дней осталось</div>
     </div>
 
-    <!-- Actions -->
     <div class="actions">
       <button class="act-btn" id="payBtn">
         <div class="ico pay">⭐</div>
@@ -346,11 +316,9 @@
       </button>
     </div>
 
-    <!-- Payment pending indicator -->
     <div class="pay-status" id="payStatus">⏳ Ожидание оплаты... Завершите оплату в Telegram и вернитесь сюда.</div>
   </div>
 
-  <!-- ===== BOTTOM SHEET: App Picker ===== -->
   <div class="overlay" id="sheetOverlay">
     <div class="sheet" id="appSheet">
       <div class="sheet-handle"></div>
@@ -361,28 +329,24 @@
     </div>
   </div>
 
-  <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
   <script>
     // ==========================================
-    // ⚙️  CONFIGURATION — ЗАПОЛНИТЕ СВОИ ЗНАЧЕНИЯ
+    // ⚙️  CONFIGURATION
     // ==========================================
     const SUPABASE_URL  = 'https://fyynjpglyacgxjoknteh.supabase.co';
-    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5eW5qcGdseWFjZ3hqb2tudGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4OTMwMDQsImV4cCI6MjA4NDQ2OTAwNH0.E3Km0BprWfvJxjXBiKbfLsM2cvlSmpOmknJWGTahnco';
+    const SUPABASE_ANON = 'ВСТАВЬТЕ_ВАШ_ANON_KEY';
     const FUNCTION_URL  = `${SUPABASE_URL}/functions/v1/VPN_Aleksander`;
     const SUB_BASE      = 'https://x1.a2x2.top:14018/sub';
-    const BOT_USERNAME  = 'VPN_HIVE_BOT';
+    const BOT_USERNAME  = 'YOUR_BOT_USERNAME';
     // ==========================================
 
-    let sb = null;  // Supabase client
+    let sb = null;
     let profile = null;
     let pollTimer = null;
     let currentPayToken = null;
 
-    // ==========================================
-    // SUPABASE INIT
-    // ==========================================
     try {
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
         auth: {
@@ -395,10 +359,9 @@
     } catch(e) { console.error('Supabase init error:', e); }
 
     // ==========================================
-    // ON LOAD: check session
+    // ON LOAD
     // ==========================================
     window.addEventListener('load', async () => {
-      // Небольшая задержка для красоты
       await new Promise(r => setTimeout(r, 600));
 
       if (!sb) {
@@ -408,20 +371,13 @@
       }
 
       const { data: { session } } = await sb.auth.getSession();
-
       document.getElementById('preloader').classList.add('hidden');
 
-      if (session) {
-        await enterApp(session);
-      } else {
-        showScreen('auth');
-      }
+      if (session) await enterApp(session);
+      else showScreen('auth');
 
-      // Слушаем изменения авторизации (возврат после OAuth)
       sb.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session && !profile) {
-          await enterApp(session);
-        }
+        if (event === 'SIGNED_IN' && session && !profile) await enterApp(session);
         if (event === 'SIGNED_OUT') {
           profile = null;
           showScreen('auth');
@@ -430,47 +386,71 @@
     });
 
     // ==========================================
-    // SCREENS
+    // 🔄 АВТО-ОБНОВЛЕНИЕ ПРОФИЛЯ
+    // ==========================================
+    // Когда пользователь возвращается на вкладку (например, после оплаты в Telegram),
+    // автоматически тянем свежие данные из БД
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden && profile) {
+        console.log('[visibility] page visible, refreshing profile...');
+        await refreshProfile();
+      }
+    });
+
+    // Также перепроверяем при focus (некоторые браузеры не шлют visibilitychange)
+    window.addEventListener('focus', async () => {
+      if (profile) {
+        console.log('[focus] window focus, refreshing profile...');
+        await refreshProfile();
+      }
+    });
+
+    async function refreshProfile() {
+      const token = await getToken();
+      if (!token) return;
+      try {
+        const data = await apiCall(token, 'get-profile', {});
+        const oldPaidUntil = profile?.paid_until || 0;
+        profile = data.profile;
+        updateUI();
+        // Если paid_until увеличился — оплата прошла!
+        if ((profile.paid_until || 0) > oldPaidUntil && oldPaidUntil >= 0) {
+          if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+          document.getElementById('payStatus').style.display = 'none';
+          if (oldPaidUntil > 0) toast('✅ Подписка продлена!');
+          else toast('✅ Подписка активирована!');
+        }
+      } catch(e) { console.error('refreshProfile error:', e); }
+    }
+
     // ==========================================
     function showScreen(name) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
       document.getElementById(name === 'auth' ? 'authScreen' : 'appScreen').classList.add('visible');
     }
 
-    // ==========================================
-    // GOOGLE SIGN IN
-    // ==========================================
     async function signInWithGoogle() {
       const btn = document.getElementById('googleBtn');
       btn.classList.add('loading');
       try {
         const { error } = await sb.auth.signInWithOAuth({
           provider: 'google',
-          options: {
-            redirectTo: window.location.origin + window.location.pathname,
-          }
+          options: { redirectTo: window.location.origin + window.location.pathname }
         });
         if (error) throw error;
-        // Перенаправление на Google...
       } catch(e) {
         toast('Ошибка авторизации: ' + e.message);
         btn.classList.remove('loading');
       }
     }
 
-    // ==========================================
-    // ENTER APP (after auth)
-    // ==========================================
     async function enterApp(session) {
       showScreen('app');
-
-      // Set user info in UI
       const user = session.user;
       const meta = user.user_metadata || {};
       document.getElementById('userName').textContent = meta.full_name || meta.name || user.email || '';
       document.getElementById('userAvatar').src = meta.avatar_url || meta.picture || '';
 
-      // Fetch profile from Edge Function
       try {
         const data = await apiCall(session.access_token, 'get-profile', {});
         profile = data.profile;
@@ -481,9 +461,6 @@
       }
     }
 
-    // ==========================================
-    // API CALL (authenticated)
-    // ==========================================
     async function apiCall(token, action, payload) {
       const res = await fetch(FUNCTION_URL, {
         method: 'POST',
@@ -505,9 +482,6 @@
       return session?.access_token || null;
     }
 
-    // ==========================================
-    // UPDATE UI
-    // ==========================================
     function updateUI() {
       if (!profile) return;
       const now = Math.floor(Date.now() / 1000);
@@ -529,54 +503,47 @@
     }
 
     // ==========================================
-    // PAYMENT: Telegram Stars
+    // PAYMENT
     // ==========================================
-document.getElementById('payBtn').addEventListener('click', async () => {
-  // 1. СРАЗУ открываем окно — синхронная реакция на клик, popup-blocker пропускает
-  const win = window.open('about:blank', '_blank');
+    document.getElementById('payBtn').addEventListener('click', async () => {
+      const win = window.open('about:blank', '_blank');
 
-  const token = await getToken();
-  if (!token) {
-    if (win) win.close();
-    return toast('Сессия истекла, войдите заново');
-  }
+      const token = await getToken();
+      if (!token) {
+        if (win) win.close();
+        return toast('Сессия истекла, войдите заново');
+      }
 
-  try {
-    const data = await apiCall(token, 'create-payment', { plan: '1m' });
-    currentPayToken = data.token;
+      try {
+        const data = await apiCall(token, 'create-payment', { plan: '1m' });
+        currentPayToken = data.token;
 
-    // 2. Очищаем pay-status от старых fallback-ссылок (если были)
-    const payStatus = document.getElementById('payStatus');
-    payStatus.innerHTML = '⏳ Ожидание оплаты... Завершите оплату в Telegram и вернитесь сюда.';
-    payStatus.style.display = 'block';
+        const payStatus = document.getElementById('payStatus');
+        payStatus.innerHTML = '⏳ Ожидание оплаты... Завершите оплату в Telegram и вернитесь сюда.';
+        payStatus.style.display = 'block';
 
-    // 3. Открываем бота в нужной вкладке
-    if (win && !win.closed) {
-      // popup открылся — подменяем URL
-      win.location.href = data.botUrl;
-    } else {
-      // popup заблокирован — показываем ссылку для ручного открытия
-      const fallbackBtn = document.createElement('a');
-      fallbackBtn.href = data.botUrl;
-      fallbackBtn.target = '_blank';
-      fallbackBtn.textContent = '👉 Открыть Telegram-бота';
-      fallbackBtn.style.cssText = 'display:block;margin-top:12px;color:var(--accent);text-decoration:underline;font-weight:600;';
-      payStatus.appendChild(fallbackBtn);
-    }
+        if (win && !win.closed) {
+          win.location.href = data.botUrl;
+        } else {
+          const fallbackBtn = document.createElement('a');
+          fallbackBtn.href = data.botUrl;
+          fallbackBtn.target = '_blank';
+          fallbackBtn.textContent = '👉 Открыть Telegram-бота';
+          fallbackBtn.style.cssText = 'display:block;margin-top:12px;color:var(--accent);text-decoration:underline;font-weight:600;';
+          payStatus.appendChild(fallbackBtn);
+        }
 
-    // 4. Запускаем поллинг
-    startPaymentPolling(token, data.token);
-
-  } catch(e) {
-    if (win) win.close();
-    toast('Ошибка: ' + e.message);
-  }
-});
+        startPaymentPolling(token, data.token);
+      } catch(e) {
+        if (win) win.close();
+        toast('Ошибка: ' + e.message);
+      }
+    });
 
     function startPaymentPolling(accessToken, payToken) {
       if (pollTimer) clearInterval(pollTimer);
       let attempts = 0;
-      const maxAttempts = 120; // 10 минут (каждые 5 секунд)
+      const maxAttempts = 120;
 
       pollTimer = setInterval(async () => {
         attempts++;
@@ -584,15 +551,12 @@ document.getElementById('payBtn').addEventListener('click', async () => {
           clearInterval(pollTimer);
           pollTimer = null;
           document.getElementById('payStatus').style.display = 'none';
-          toast('Время ожидания оплаты истекло');
           return;
         }
 
         try {
-          // Обновляем токен если нужно
           const freshToken = await getToken();
           if (!freshToken) return;
-
           const data = await apiCall(freshToken, 'check-payment', { token: payToken });
 
           if (data.paid) {
@@ -601,122 +565,56 @@ document.getElementById('payBtn').addEventListener('click', async () => {
             document.getElementById('payStatus').style.display = 'none';
             profile = data.profile;
             updateUI();
-            toast('Оплата прошла! Подписка активна.');
+            toast('✅ Оплата прошла! Подписка активна.');
           }
-        } catch(e) {
-          console.error('Poll error:', e);
-        }
+        } catch(e) { console.error('Poll error:', e); }
       }, 5000);
     }
 
     // ==========================================
-    // DOWNLOAD CONFIG (App Picker)
+    // DOWNLOAD / COPY
     // ==========================================
     document.getElementById('downloadBtn').addEventListener('click', () => openAppSheet());
     document.getElementById('copyBtn').addEventListener('click', () => copySubUrl());
 
-    // ==========================================
-    // PLATFORM DETECTION
-    // ==========================================
     function getPlatform() {
       const ua = navigator.userAgent || '';
       if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
       if (/android/i.test(ua)) return 'android';
       if (/Macintosh|MacIntel/.test(ua)) return 'mac';
       if (/Win/.test(ua)) return 'windows';
-      return 'mac'; // fallback
+      return 'mac';
     }
 
-    // ==========================================
-    // VPN APPS — 4 ПЛАТФОРМЫ
-    // ==========================================
     const VPN_APPS = {
       ios: [
-        {
-          name: 'Streisand',
-          note: 'Бесплатный, рекомендуем',
-          icon: 'S',
-          color: '#6366f1',
-          scheme: 'streisand://import/',
-          storeUrl: 'https://apps.apple.com/app/streisand/id6450534064',
-        },
-        {
-          name: 'Hiddify',
-          note: 'Мощный open-source клиент',
-          icon: 'H',
-          color: '#f59e0b',
-          scheme: 'hiddify://import/',
-          storeUrl: 'https://apps.apple.com/app/hiddify-proxy-vpn/id6596777532',
-        },
+        { name:'Streisand', note:'Бесплатный, рекомендуем', icon:'S', color:'#6366f1', scheme:'streisand://import/', storeUrl:'https://apps.apple.com/app/streisand/id6450534064' },
+        { name:'Hiddify', note:'Мощный open-source клиент', icon:'H', color:'#f59e0b', scheme:'hiddify://import/', storeUrl:'https://apps.apple.com/app/hiddify-proxy-vpn/id6596777532' },
       ],
       android: [
-        {
-          name: 'v2rayNG',
-          note: 'Рекомендуем, бесплатный',
-          icon: 'V',
-          color: '#22c55e',
-          scheme: 'v2rayng://install-config?url=',
-          storeUrl: 'https://play.google.com/store/apps/details?id=com.v2ray.ang',
-        },
-        {
-          name: 'Happ',
-          note: 'Простой и удобный',
-          icon: '✦',
-          color: '#ec4899',
-          scheme: '',  // clipboard-based
-          storeUrl: 'https://play.google.com/store/search?q=happ+vpn&c=apps',
-        },
+        { name:'v2rayNG', note:'Рекомендуем, бесплатный', icon:'V', color:'#22c55e', scheme:'v2rayng://install-config?url=', storeUrl:'https://play.google.com/store/apps/details?id=com.v2ray.ang' },
+        { name:'Happ', note:'Простой и удобный', icon:'✦', color:'#ec4899', scheme:'', storeUrl:'https://play.google.com/store/search?q=happ+vpn&c=apps' },
       ],
       mac: [
-        {
-          name: 'Streisand',
-          note: 'Рекомендуем для macOS',
-          icon: 'S',
-          color: '#6366f1',
-          scheme: 'streisand://import/',
-          storeUrl: 'https://apps.apple.com/app/streisand/id6450534064',
-        },
-        {
-          name: 'V2RayXS',
-          note: 'Легковесный GUI-клиент',
-          icon: 'X',
-          color: '#14b8a6',
-          scheme: '',
-          storeUrl: 'https://github.com/tzmax/V2RayXS/releases',
-        },
+        { name:'Streisand', note:'Рекомендуем для macOS', icon:'S', color:'#6366f1', scheme:'streisand://import/', storeUrl:'https://apps.apple.com/app/streisand/id6450534064' },
+        { name:'V2RayXS', note:'Легковесный GUI-клиент', icon:'X', color:'#14b8a6', scheme:'', storeUrl:'https://github.com/tzmax/V2RayXS/releases' },
       ],
       windows: [
-        {
-          name: 'Throne',
-          note: 'Рекомендуем для Windows',
-          icon: 'T',
-          color: '#8b5cf6',
-          scheme: '',
-          storeUrl: 'https://github.com/ptrss/throne/releases',
-        },
+        { name:'Throne', note:'Рекомендуем для Windows', icon:'T', color:'#8b5cf6', scheme:'', storeUrl:'https://github.com/ptrss/throne/releases' },
       ],
     };
 
-    const PLATFORM_LABELS = {
-      ios: 'iOS',
-      android: 'Android',
-      mac: 'macOS',
-      windows: 'Windows',
-    };
+    const PLATFORM_LABELS = { ios:'iOS', android:'Android', mac:'macOS', windows:'Windows' };
 
-    // ==========================================
-    // APP SHEET
-    // ==========================================
     function openAppSheet() {
       const platform = getPlatform();
       const apps = VPN_APPS[platform] || VPN_APPS.mac;
-
       document.getElementById('sheetTitle').textContent = `Приложения для ${PLATFORM_LABELS[platform] || platform}`;
 
       const hasDeepLinks = apps.some(a => a.scheme);
       document.getElementById('sheetDesc').textContent = hasDeepLinks
-        ? 'Нажмите на приложение для автоматического импорта конфигурации. Если не установлено — перейдёте в магазин.'
-        : 'Скопируйте ссылку подписки и импортируйте в выбранное приложение.';
+        ? 'Нажмите на приложение для автоматического импорта конфигурации.'
+        : 'Скопируйте ссылку и импортируйте в выбранное приложение.';
 
       const list = document.getElementById('appList');
       list.innerHTML = '';
@@ -736,7 +634,6 @@ document.getElementById('payBtn').addEventListener('click', async () => {
         list.appendChild(el);
       });
 
-      // Кнопка «Скачать файл»
       const dlBtn = document.createElement('button');
       dlBtn.className = 'app-row';
       dlBtn.style.marginTop = '8px';
@@ -744,8 +641,8 @@ document.getElementById('payBtn').addEventListener('click', async () => {
       dlBtn.innerHTML = `
         <div class="aicon" style="background:var(--bg-card);color:var(--text-2);border:1px solid var(--border)">📄</div>
         <div style="flex:1">
-          <div class="aname">Скачать raw-файл конфигурации</div>
-          <div class="anote">Универсальный способ — ручной импорт</div>
+          <div class="aname">Скачать raw-файл</div>
+          <div class="anote">Универсальный способ</div>
         </div>
         <span class="arrow">→</span>
       `;
@@ -763,40 +660,27 @@ document.getElementById('payBtn').addEventListener('click', async () => {
       if (e.target === e.currentTarget) closeSheet();
     });
 
-    // ==========================================
-    // OPEN IN APP (deep link)
-    // ==========================================
     function openInApp(app) {
       const subUrl = getSubUrl();
       if (!subUrl) return toast('Нет активной подписки');
-
       closeSheet();
 
       if (app.scheme) {
-        let deepLink;
-        if (app.scheme.includes('?url=')) {
-          deepLink = app.scheme + encodeURIComponent(subUrl);
-        } else {
-          // streisand://import/URL  или  hiddify://import/URL
-          deepLink = app.scheme + encodeURIComponent(subUrl);
-        }
-
+        const deepLink = app.scheme + encodeURIComponent(subUrl);
         const start = Date.now();
         window.location.href = deepLink;
-
         setTimeout(() => {
           if (Date.now() - start < 2500) {
-            if (confirm(`${app.name} не установлен.\nОткрыть магазин приложений?`)) {
+            if (confirm(`${app.name} не установлен. Открыть магазин?`)) {
               window.open(app.storeUrl, '_blank');
             }
           }
         }, 1500);
       } else {
-        // Нет deep link — копируем и предлагаем скачать
         navigator.clipboard.writeText(subUrl).then(() => {
-          toast('Ссылка скопирована в буфер!');
+          toast('Ссылка скопирована!');
           setTimeout(() => {
-            if (confirm(`Ссылка скопирована.\nОткройте ${app.name} и импортируйте из буфера.\n\nСкачать ${app.name}?`)) {
+            if (confirm(`Откройте ${app.name} и импортируйте из буфера. Скачать ${app.name}?`)) {
               window.open(app.storeUrl, '_blank');
             }
           }, 400);
@@ -804,9 +688,6 @@ document.getElementById('payBtn').addEventListener('click', async () => {
       }
     }
 
-    // ==========================================
-    // DOWNLOAD RAW CONFIG
-    // ==========================================
     async function downloadRawConfig() {
       closeSheet();
       const token = await getToken();
@@ -832,9 +713,6 @@ document.getElementById('payBtn').addEventListener('click', async () => {
       }
     }
 
-    // ==========================================
-    // COPY SUB URL
-    // ==========================================
     function getSubUrl() {
       return profile?.sub_id ? `${SUB_BASE}/${profile.sub_id}` : '';
     }
@@ -845,7 +723,6 @@ document.getElementById('payBtn').addEventListener('click', async () => {
       navigator.clipboard.writeText(url)
         .then(() => toast('Ссылка скопирована!'))
         .catch(() => {
-          // fallback
           const ta = document.createElement('textarea');
           ta.value = url; ta.style.cssText = 'position:fixed;left:-9999px';
           document.body.appendChild(ta); ta.select();
@@ -855,9 +732,6 @@ document.getElementById('payBtn').addEventListener('click', async () => {
         });
     }
 
-    // ==========================================
-    // LOGOUT
-    // ==========================================
     async function logout() {
       closeUserMenu();
       if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
@@ -866,9 +740,6 @@ document.getElementById('payBtn').addEventListener('click', async () => {
       showScreen('auth');
     }
 
-    // ==========================================
-    // USER MENU
-    // ==========================================
     function toggleUserMenu() {
       document.getElementById('userMenu').classList.toggle('visible');
     }
@@ -881,9 +752,6 @@ document.getElementById('payBtn').addEventListener('click', async () => {
       if (!pill.contains(e.target) && !menu.contains(e.target)) closeUserMenu();
     });
 
-    // ==========================================
-    // TOAST
-    // ==========================================
     function toast(msg, ms = 2500) {
       const t = document.getElementById('toast');
       t.textContent = msg;
