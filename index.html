@@ -137,8 +137,13 @@
       font-size:18px;flex-shrink:0;
     }
     .act-btn .ico.pay{background:rgba(251,191,36,.1)}
-    .act-btn .ico.dl{background:rgba(34,211,238,.1)}
+    .act-btn .ico.dl{background:linear-gradient(135deg,rgba(34,211,238,.18),rgba(34,211,238,.08));border:1px solid rgba(34,211,238,.2)}
     .act-btn .ico.cp{background:rgba(167,139,250,.1)}
+    .act-btn.featured{
+      background:linear-gradient(135deg,rgba(34,211,238,.06),rgba(34,211,238,.02));
+      border-color:rgba(34,211,238,.25);
+    }
+    .act-btn.featured:hover{border-color:var(--accent)}
     .act-title{font-size:14px;font-weight:600}
     .act-desc{font-size:12px;color:var(--text-3);margin-top:2px}
     .pay-status{
@@ -161,18 +166,55 @@
       border-radius:20px 20px 0 0;border-bottom:none;
       padding:16px 20px 36px;z-index:5001;
       transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);
-      max-height:80vh;overflow-y:auto;
+      max-height:88vh;overflow-y:auto;
     }
     .overlay.visible .sheet{transform:translateY(0)}
     .sheet-handle{width:36px;height:4px;background:var(--border-2);border-radius:2px;margin:0 auto 20px}
-    .sheet h3{font-size:17px;font-weight:700;margin-bottom:6px}
-    .sheet .sdesc{font-size:13px;color:var(--text-3);margin-bottom:20px;line-height:1.6}
+    .sheet h3{font-size:18px;font-weight:700;margin-bottom:8px}
+    .sheet .sdesc{font-size:13px;color:var(--text-3);margin-bottom:18px;line-height:1.55}
+
+    .step{
+      display:flex;gap:12px;padding:12px 14px;
+      background:var(--bg-3);border:1px solid var(--border);
+      border-radius:12px;margin-bottom:8px;
+    }
+    .step-num{
+      flex-shrink:0;width:24px;height:24px;border-radius:50%;
+      background:var(--accent);color:var(--bg);
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:700;
+    }
+    .step-text{font-size:13px;line-height:1.5;color:var(--text-2)}
+    .step-text b{color:var(--text)}
+
+    .download-btn{
+      display:flex;align-items:center;justify-content:center;gap:10px;
+      width:100%;padding:16px 20px;margin:14px 0;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      color:var(--bg);font-weight:700;font-size:15px;
+      border:none;border-radius:14px;cursor:pointer;
+      transition:all var(--t);font-family:inherit;
+      text-decoration:none;
+    }
+    .download-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(34,211,238,.25)}
+    .download-btn:active{transform:translateY(0)}
+
+    .sheet-copy-btn{
+      display:flex;align-items:center;justify-content:center;gap:10px;
+      width:100%;padding:14px;margin:6px 0;
+      background:var(--bg-card);border:1px solid var(--border);
+      color:var(--text);font-weight:600;font-size:14px;
+      border-radius:12px;cursor:pointer;
+      transition:all var(--t);font-family:inherit;
+    }
+    .sheet-copy-btn:hover{border-color:var(--border-2);background:var(--bg-3)}
+
     .app-row{
       display:flex;align-items:center;gap:14px;
       padding:14px 16px;border-radius:12px;
       background:var(--bg-3);border:1px solid var(--border);
       margin-bottom:8px;cursor:pointer;transition:all var(--t);
-      border:none;width:100%;text-align:left;font-family:inherit;color:var(--text);
+      width:100%;text-align:left;font-family:inherit;color:var(--text);
       text-decoration:none;
     }
     .app-row:hover{background:var(--bg-card);border-color:var(--border-2)}
@@ -182,16 +224,28 @@
       font-size:15px;font-weight:700;flex-shrink:0;
       background:var(--accent);color:var(--bg);
     }
+    .app-row .ainfo{flex:1;min-width:0}
     .app-row .aname{font-size:14px;font-weight:600}
-    .app-row .anote{font-size:11px;color:var(--text-3)}
-    .app-row .arrow{color:var(--text-3);font-size:16px;margin-left:auto}
+    .app-row .anote{font-size:11px;color:var(--text-3);margin-top:2px}
+    .app-row .arrow{color:var(--text-3);font-size:16px;flex-shrink:0}
+
+    .divider{
+      display:flex;align-items:center;gap:12px;
+      margin:18px 0;color:var(--text-3);font-size:11px;
+      text-transform:uppercase;letter-spacing:.05em;
+    }
+    .divider::before,.divider::after{
+      content:'';flex:1;height:1px;background:var(--border);
+    }
+
     .sheet-close{
-      width:100%;padding:12px;margin-top:8px;
+      width:100%;padding:12px;margin-top:14px;
       background:transparent;border:1px dashed var(--border);
       border-radius:12px;cursor:pointer;font-family:inherit;
       font-size:13px;color:var(--text-3);transition:all var(--t);
     }
     .sheet-close:hover{border-color:var(--border-2);color:var(--text-2)}
+
     .toast{
       position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(80px);
       background:var(--bg-card);border:1px solid var(--border);color:var(--text);
@@ -201,6 +255,7 @@
       max-width:90vw;
     }
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
     .user-menu{
       position:fixed;top:70px;right:24px;
       background:var(--bg-2);border:1px solid var(--border);
@@ -274,11 +329,11 @@
         </div>
       </button>
 
-      <button class="act-btn" id="downloadBtn" disabled>
-        <div class="ico dl">📥</div>
+      <button class="act-btn featured" id="installBtn" disabled>
+        <div class="ico dl">📲</div>
         <div>
           <div class="act-title">Установить на устройство</div>
-          <div class="act-desc">Открыть конфигурацию в VPN-приложении</div>
+          <div class="act-desc" id="installDesc">Подключение в один тап</div>
         </div>
       </button>
 
@@ -295,11 +350,9 @@
   </div>
 
   <div class="overlay" id="sheetOverlay">
-    <div class="sheet" id="appSheet">
+    <div class="sheet" id="installSheet">
       <div class="sheet-handle"></div>
-      <h3 id="sheetTitle">Выберите приложение</h3>
-      <p class="sdesc" id="sheetDesc"></p>
-      <div id="appList"></div>
+      <div id="sheetContent"></div>
       <button class="sheet-close" onclick="closeSheet()">Закрыть</button>
     </div>
   </div>
@@ -314,6 +367,12 @@
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5eW5qcGdseWFjZ3hqb2tudGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4OTMwMDQsImV4cCI6MjA4NDQ2OTAwNH0.E3Km0BprWfvJxjXBiKbfLsM2cvlSmpOmknJWGTahnco';
     const BOT_USERNAME  = 'VPN_HIVE_BOT';
     const FUNCTION_URL  = `${SUPABASE_URL}/functions/v1/VPN_Aleksander`;
+
+    // 📦 Прямая ссылка на скачивание GPN.apk (форк v2rayNG)
+    // Когда соберёте APK — пропишите сюда HTTPS-ссылку (GitHub Releases / свой CDN)
+    // Пока пусто — на Android будет показано «В разработке»
+    const ANDROID_APK_URL = 'https://github.com/Alchemist8931/v2rayNG-GPN/releases/download/v1.0.0/gpn-1.0.0.apk';
+    const ANDROID_APK_VERSION = '1.0.0';
     // ==========================================
 
     let sb = null;
@@ -321,9 +380,7 @@
     let pollTimer = null;
     let currentPayToken = null;
 
-    // 🔑 Кэш VLESS + sub URL'ов
     let cachedVless = null;
-    let cachedProxySub = null;
     let cachedAt = 0;
     const CACHE_MS = 60_000;
 
@@ -375,7 +432,7 @@
     }
 
     function clearCache() {
-      cachedVless = null; cachedProxySub = null; cachedAt = 0;
+      cachedVless = null; cachedAt = 0;
     }
 
     function showScreen(name) {
@@ -448,8 +505,15 @@
       document.getElementById('payTitle').textContent = active
         ? 'Продлить через Telegram Stars'
         : 'Оплатить через Telegram Stars';
-      document.getElementById('downloadBtn').disabled = !active;
+      document.getElementById('installBtn').disabled = !active;
       document.getElementById('copyBtn').disabled = !active;
+
+      // Описание кнопки «Установить» меняем по платформе
+      const platform = getPlatform();
+      const installDesc = document.getElementById('installDesc');
+      if (platform === 'android')      installDesc.textContent = 'Скачать приложение GPN';
+      else if (platform === 'ios')     installDesc.textContent = 'Инструкция и список приложений';
+      else                             installDesc.textContent = 'Инструкция для вашего устройства';
     }
 
     document.getElementById('payBtn').addEventListener('click', async () => {
@@ -507,39 +571,37 @@
     }
 
     // ==========================================
-    // 🔑 Получение VLESS + proxy sub URL с бэка
+    // VLESS
     // ==========================================
-    async function fetchKeys() {
-      if (cachedVless && cachedProxySub && (Date.now() - cachedAt) < CACHE_MS) {
-        return { vless: cachedVless, proxySub: cachedProxySub };
-      }
+    async function fetchVless() {
+      if (cachedVless && (Date.now() - cachedAt) < CACHE_MS) return cachedVless;
       const token = await getToken();
       if (!token) throw new Error('Сессия истекла');
       const data = await apiCall(token, 'get-vless', {});
       if (!data.primary) throw new Error('Ссылка не получена');
       cachedVless = data.primary;
-      cachedProxySub = data.proxySubUrl || data.subUrl;
       cachedAt = Date.now();
-      return { vless: cachedVless, proxySub: cachedProxySub };
+      return cachedVless;
     }
-
-    document.getElementById('downloadBtn').addEventListener('click', async () => {
-      toast('Получаем ключ...');
-      try {
-        await fetchKeys();
-        openAppSheet();
-      } catch(e) { toast('Ошибка: ' + e.message); }
-    });
 
     document.getElementById('copyBtn').addEventListener('click', async () => {
       toast('Получаем ключ...');
       try {
-        const { vless } = await fetchKeys();
+        const vless = await fetchVless();
         await copyToClipboard(vless);
         toast('✅ VLESS-ключ скопирован!');
       } catch(e) { toast('Ошибка: ' + e.message); }
     });
 
+    document.getElementById('installBtn').addEventListener('click', async () => {
+      // Заранее получаем VLESS чтобы было готово к копированию
+      try { await fetchVless(); } catch(e) { /* ignore — bottom sheet всё равно покажет */ }
+      openInstallSheet();
+    });
+
+    // ==========================================
+    // PLATFORM DETECTION
+    // ==========================================
     function getPlatform() {
       const ua = navigator.userAgent || '';
       if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
@@ -550,104 +612,139 @@
     }
 
     // ==========================================
-    // 📱 ПРИЛОЖЕНИЯ ПО ПЛАТФОРМАМ
+    // 📋 РЕКОМЕНДОВАННЫЕ ПРИЛОЖЕНИЯ ДЛЯ iOS / Mac / Windows
     // ==========================================
-    // linkType: 'vless' (прямая ссылка) | 'subscription' (URL подписки через наш proxy)
-    // encoding: 'url' (encodeURIComponent) | 'base64' (btoa)
-    const VPN_APPS = {
+    const APPS_BY_PLATFORM = {
       ios: [
-        {
-          name: 'V2Box',
-          note: 'Бесплатный, простой',
-          icon: 'V', color: '#3b82f6',
-          scheme: 'v2box://install-sub?url=',
-          linkType: 'subscription',  // V2Box ждёт URL подписки
-          encoding: 'url',
-          storeUrl: 'https://apps.apple.com/app/v2box-v2ray-client/id6446814690'
-        },
-        {
-          name: 'Happ',
-          note: 'Простой и удобный',
-          icon: '✦', color: '#ec4899',
-          scheme: 'happ://add/',
-          linkType: 'vless',         // Happ принимает VLESS напрямую (base64)
-          encoding: 'base64',
-          storeUrl: 'https://apps.apple.com/app/happ-proxy-utility/id6504287215'
-        },
-      ],
-      android: [
-        {
-          name: 'v2RayTun',
-          note: 'Рекомендуем, бесплатный',
-          icon: 'V', color: '#22c55e',
-          scheme: 'v2raytun://install-sub?url=',
-          linkType: 'subscription',
-          encoding: 'url',
-          storeUrl: 'https://play.google.com/store/apps/details?id=com.v2raytun.android'
-        },
-        {
-          name: 'Happ',
-          note: 'Простой и удобный',
-          icon: '✦', color: '#ec4899',
-          scheme: 'happ://add/',
-          linkType: 'vless',
-          encoding: 'base64',
-          storeUrl: 'https://play.google.com/store/apps/details?id=com.happproxy'
-        },
+        { name: 'Streisand', note: 'Бесплатный, рекомендуем', icon: 'S', color: '#6366f1', storeUrl: 'https://apps.apple.com/app/streisand/id6450534064' },
+        { name: 'V2Box',     note: 'Простой и удобный',       icon: 'V', color: '#3b82f6', storeUrl: 'https://apps.apple.com/app/v2box-v2ray-client/id6446814690' },
+        { name: 'Happ',      note: 'Альтернативный клиент',   icon: '✦', color: '#ec4899', storeUrl: 'https://apps.apple.com/app/happ-proxy-utility/id6504287215' },
       ],
       mac: [
-        {
-          name: 'Streisand', note: 'Рекомендуем для macOS', icon: 'S', color: '#6366f1',
-          scheme: 'streisand://import/', linkType: 'vless', encoding: 'url',
-          storeUrl: 'https://apps.apple.com/app/streisand/id6450534064'
-        },
-        {
-          name: 'V2RayXS', note: 'Легковесный GUI-клиент', icon: 'X', color: '#14b8a6',
-          scheme: '', storeUrl: 'https://github.com/tzmax/V2RayXS/releases'
-        },
+        { name: 'Streisand', note: 'Из Mac App Store',       icon: 'S', color: '#6366f1', storeUrl: 'https://apps.apple.com/app/streisand/id6450534064' },
+        { name: 'V2RayXS',   note: 'Open-source, GitHub',    icon: 'X', color: '#14b8a6', storeUrl: 'https://github.com/tzmax/V2RayXS/releases' },
       ],
       windows: [
-        {
-          name: 'Throne', note: 'Рекомендуем для Windows', icon: 'T', color: '#8b5cf6',
-          scheme: '', storeUrl: 'https://github.com/ptrss/throne/releases'
-        },
+        { name: 'Throne',    note: 'Open-source, GitHub',    icon: 'T', color: '#8b5cf6', storeUrl: 'https://github.com/ptrss/throne/releases' },
+        { name: 'Hiddify',   note: 'Удобный GUI',            icon: 'H', color: '#f59e0b', storeUrl: 'https://github.com/hiddify/hiddify-app/releases' },
       ],
     };
 
-    const PLATFORM_LABELS = { ios:'iOS', android:'Android', mac:'macOS', windows:'Windows' };
-
-    function openAppSheet() {
+    // ==========================================
+    // BOTTOM SHEET — содержимое зависит от платформы
+    // ==========================================
+    function openInstallSheet() {
       const platform = getPlatform();
-      const apps = VPN_APPS[platform] || VPN_APPS.mac;
-      document.getElementById('sheetTitle').textContent = `Приложения для ${PLATFORM_LABELS[platform] || platform}`;
-      const hasDeepLinks = apps.some(a => a.scheme);
-      document.getElementById('sheetDesc').textContent = hasDeepLinks
-        ? 'Нажмите на приложение — конфигурация импортируется автоматически. VLESS-ключ также скопирован в буфер на случай ручного импорта.'
-        : 'VLESS-ключ скопирован в буфер. Откройте приложение и вставьте ключ вручную.';
+      const content = document.getElementById('sheetContent');
 
-      const list = document.getElementById('appList');
-      list.innerHTML = '';
-
-      apps.forEach(app => {
-        const el = document.createElement('a');
-        el.className = 'app-row';
-        el.href = '#';
-        el.innerHTML = `
-          <div class="aicon" style="background:${app.color}">${app.icon}</div>
-          <div style="flex:1">
-            <div class="aname">${app.name}</div>
-            <div class="anote">${app.note}</div>
-          </div>
-          <span class="arrow">→</span>
-        `;
-        el.addEventListener('click', (e) => {
-          e.preventDefault();
-          openInApp(app);
-        });
-        list.appendChild(el);
-      });
+      if (platform === 'android') {
+        renderAndroidSheet(content);
+      } else if (platform === 'ios') {
+        renderManualSheet(content, 'iOS', APPS_BY_PLATFORM.ios);
+      } else if (platform === 'mac') {
+        renderManualSheet(content, 'macOS', APPS_BY_PLATFORM.mac);
+      } else {
+        renderManualSheet(content, 'Windows', APPS_BY_PLATFORM.windows);
+      }
 
       document.getElementById('sheetOverlay').classList.add('visible');
+    }
+
+    function renderAndroidSheet(container) {
+      const apkAvailable = ANDROID_APK_URL && ANDROID_APK_URL.length > 0;
+
+      container.innerHTML = `
+        <h3>Установка на Android</h3>
+        <p class="sdesc">Скачайте приложение GPN — оно автоматически подключится к вашей подписке. Ключ копировать не нужно.</p>
+
+        ${apkAvailable ? `
+          <a class="download-btn" id="apkDownloadLink" href="${ANDROID_APK_URL}" download>
+            <span style="font-size:18px">⬇</span>
+            <span>Скачать GPN.apk · v${ANDROID_APK_VERSION}</span>
+          </a>
+
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">Скачайте файл <b>GPN.apk</b> по кнопке выше</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">Откройте файл — Android попросит разрешить установку из неизвестных источников. <b>Разрешите</b> и нажмите «Установить»</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">Запустите GPN — подписка подтянется автоматически. Нажмите кнопку <b>Подключить</b></div>
+          </div>
+
+          <div class="divider">или вручную</div>
+
+          <button class="sheet-copy-btn" id="androidCopyBtn">
+            <span>📋</span>
+            <span>Скопировать VLESS-ключ для другого клиента</span>
+          </button>
+        ` : `
+          <div class="step" style="background:var(--amber-bg);border-color:rgba(251,191,36,.2)">
+            <div class="step-num" style="background:var(--amber);color:var(--bg)">!</div>
+            <div class="step-text">Приложение для Android <b>в разработке</b>. Пока используйте копирование ключа и любой VPN-клиент (v2rayNG, Hiddify).</div>
+          </div>
+
+          <button class="sheet-copy-btn" id="androidCopyBtn" style="margin-top:14px">
+            <span>📋</span>
+            <span>Скопировать VLESS-ключ</span>
+          </button>
+        `}
+      `;
+
+      const copyBtn = document.getElementById('androidCopyBtn');
+      if (copyBtn) copyBtn.addEventListener('click', sheetCopyKey);
+    }
+
+    function renderManualSheet(container, platformLabel, apps) {
+      container.innerHTML = `
+        <h3>Установка на ${platformLabel}</h3>
+        <p class="sdesc">Скопируйте VLESS-ключ и импортируйте его в любой VPN-клиент. Ниже — рекомендованные приложения.</p>
+
+        <button class="download-btn" id="manualCopyBtn">
+          <span style="font-size:18px">📋</span>
+          <span>Скопировать VLESS-ключ</span>
+        </button>
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-text">Установите одно из приложений ниже</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-text">Нажмите кнопку <b>«Скопировать VLESS-ключ»</b> выше</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-text">Откройте приложение → нажмите <b>«+»</b> → <b>«Импорт из буфера»</b> (Import from Clipboard)</div>
+        </div>
+
+        <div class="divider">приложения</div>
+
+        ${apps.map(a => `
+          <a class="app-row" href="${a.storeUrl}" target="_blank" rel="noopener">
+            <div class="aicon" style="background:${a.color}">${a.icon}</div>
+            <div class="ainfo">
+              <div class="aname">${a.name}</div>
+              <div class="anote">${a.note}</div>
+            </div>
+            <span class="arrow">↗</span>
+          </a>
+        `).join('')}
+      `;
+
+      document.getElementById('manualCopyBtn').addEventListener('click', sheetCopyKey);
+    }
+
+    async function sheetCopyKey() {
+      try {
+        const vless = await fetchVless();
+        await copyToClipboard(vless);
+        toast('✅ VLESS-ключ скопирован!');
+      } catch(e) { toast('Ошибка: ' + e.message); }
     }
 
     function closeSheet() {
@@ -657,79 +754,6 @@
     document.getElementById('sheetOverlay').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) closeSheet();
     });
-
-    // ==========================================
-    // 🚀 ОТКРЫТИЕ В ПРИЛОЖЕНИИ
-    // ==========================================
-    async function openInApp(app) {
-      let vless = '', proxySub = '';
-      try {
-        const data = await fetchKeys();
-        vless = data.vless;
-        proxySub = data.proxySub;
-      } catch(e) { return toast('Ошибка: ' + e.message); }
-
-      // VLESS всегда копируем как fallback
-      await copyToClipboard(vless);
-
-      closeSheet();
-
-      // Без deeplink — copy + confirm
-      if (!app.scheme) {
-        toast('✅ Ключ скопирован — откройте ' + app.name);
-        setTimeout(() => {
-          if (confirm(`VLESS-ключ скопирован.\n\nОткройте ${app.name} и вставьте ключ.\n\nЕсли приложение не установлено — нажмите OK для перехода в магазин.`)) {
-            window.open(app.storeUrl, '_blank');
-          }
-        }, 800);
-        return;
-      }
-
-      // Выбираем что передать: subscription URL или прямой VLESS
-      const linkContent = (app.linkType === 'subscription') ? proxySub : vless;
-
-      // Формируем deeplink
-      let deepLink;
-      if (app.scheme === 'vless-direct') {
-        deepLink = vless;
-      } else if (app.encoding === 'base64') {
-        deepLink = app.scheme + btoa(linkContent);
-      } else {
-        deepLink = app.scheme + encodeURIComponent(linkContent);
-      }
-
-      // Детектируем открылось ли приложение через visibilitychange
-      let appOpened = false;
-      const onLeave = () => { appOpened = true; };
-      document.addEventListener('visibilitychange', onLeave);
-      window.addEventListener('pagehide', onLeave);
-      window.addEventListener('blur', onLeave);
-
-      toast('Открываем ' + app.name + '...');
-
-      const a = document.createElement('a');
-      a.href = deepLink;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
-      setTimeout(() => {
-        document.removeEventListener('visibilitychange', onLeave);
-        window.removeEventListener('pagehide', onLeave);
-        window.removeEventListener('blur', onLeave);
-
-        if (appOpened || document.hidden) return;  // ✅ открылось
-
-        // ❌ не открылось
-        const goStore = confirm(
-          `Похоже, ${app.name} не установлен.\n\n` +
-          `VLESS-ключ скопирован в буфер. После установки приложения вставьте его вручную.\n\n` +
-          `Открыть магазин?`
-        );
-        if (goStore) window.open(app.storeUrl, '_blank');
-      }, 2000);
-    }
 
     async function copyToClipboard(text) {
       try {
