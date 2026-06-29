@@ -10,12 +10,22 @@
 <meta name="apple-mobile-web-app-title" content="GPN" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230C1414'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%235BE0C8' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23F2B450'/%3E%3C/svg%3E" />
 <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22GPN%22%2C%22short_name%22%3A%22GPN%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230C1414%22%2C%22theme_color%22%3A%22%230C1414%22%7D" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 <style>
+  /* ============ SN Pro (variable, latin + cyrillic) ============ */
+  @font-face{
+    font-family:'SN Pro Variable';font-style:normal;font-display:swap;font-weight:200 900;
+    src:url(https://cdn.jsdelivr.net/fontsource/fonts/sn-pro:vf@latest/latin-wght-normal.woff2) format('woff2-variations');
+    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  }
+  @font-face{
+    font-family:'SN Pro Variable';font-style:normal;font-display:swap;font-weight:200 900;
+    src:url(https://cdn.jsdelivr.net/fontsource/fonts/sn-pro:vf@latest/cyrillic-wght-normal.woff2) format('woff2-variations');
+    unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+  }
   /* ============ tokens ============ */
   :root{
+    --font:'SN Pro Variable',system-ui,-apple-system,sans-serif;
     --ink:#0C1414; --raised:#121E1D; --raised-2:#16201F; --line:#1E302E;
     --mist:#E6F0ED; --dim:#8AA39E; --faint:#52706B;
     --teal:#5BE0C8; --teal-deep:#1F4F49;
@@ -30,7 +40,7 @@
       radial-gradient(120% 80% at 50% -10%, #102826 0%, var(--ink) 60%) fixed,
       var(--ink);
     color:var(--mist);
-    font-family:'Manrope',system-ui,sans-serif;
+    font-family:var(--font);
     -webkit-font-smoothing:antialiased;
     min-height:100dvh;
     padding:max(20px,env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom));
@@ -39,7 +49,7 @@
 
   /* ============ header ============ */
   header{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
-  .brand{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;letter-spacing:.04em}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--font);font-weight:700;font-size:19px;letter-spacing:.04em}
   .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 4px var(--amber-deep)}
   .brand.live .dot{background:var(--teal);box-shadow:0 0 0 4px var(--teal-deep)}
   .pill{font-size:12px;font-weight:600;letter-spacing:.03em;color:var(--dim);
@@ -56,14 +66,14 @@
   .ring .prog{stroke:var(--amber);stroke-linecap:round;transition:stroke-dashoffset .6s linear,stroke .4s}
   .live .ring .prog{stroke:var(--teal)}
   .ring .core{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;color:var(--dim);letter-spacing:.02em}
+    font-family:var(--font);font-weight:600;font-size:13px;color:var(--dim);letter-spacing:.02em}
   .live .ring .core{color:var(--teal)}
   @media(prefers-reduced-motion:no-preference){
     .live .ring{animation:breathe 3.4s ease-in-out infinite}
   }
   @keyframes breathe{0%,100%{opacity:1}50%{opacity:.72}}
 
-  .state-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;margin:0 0 6px}
+  .state-title{font-family:var(--font);font-weight:600;font-size:20px;margin:0 0 6px}
   .state-sub{color:var(--dim);font-size:14.5px;line-height:1.5;margin:0 auto;max-width:300px}
 
   /* the key itself */
@@ -71,7 +81,7 @@
   .keylabel{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
   .keyrow{display:flex;gap:8px}
   .keyval{flex:1;min-width:0;background:var(--ink);border:1px solid var(--line);border-radius:11px;
-    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mist);
+    font-family:var(--font);font-size:12px;color:var(--mist);
     padding:12px 13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
   /* ============ buttons ============ */
@@ -101,7 +111,7 @@
   .plan:hover,.plan:focus-visible{border-color:var(--amber-deep);outline:none}
   .plan .pname{font-weight:600;font-size:15px}
   .plan .pmeta{font-size:12.5px;color:var(--dim);margin-top:2px}
-  .plan .pprice{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;white-space:nowrap}
+  .plan .pprice{font-family:var(--font);font-weight:600;font-size:16px;white-space:nowrap}
   .plan .save{display:inline-block;font-size:10.5px;font-weight:600;color:var(--teal);
     border:1px solid var(--teal-deep);border-radius:6px;padding:1px 6px;margin-left:7px;vertical-align:middle}
 
@@ -110,14 +120,14 @@
   ol.steps li{counter-increment:s;display:flex;gap:12px;padding:9px 0;font-size:14px;color:var(--mist);line-height:1.45}
   ol.steps li::before{content:counter(s);flex:none;width:24px;height:24px;border-radius:7px;
     background:var(--ink);border:1px solid var(--line);color:var(--dim);
-    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;
+    font-family:var(--font);font-weight:600;font-size:12px;
     display:flex;align-items:center;justify-content:center}
 
   /* referral + creds */
   .strip{display:flex;align-items:center;gap:12px;justify-content:space-between}
   .credgrid{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin-top:14px;align-items:center}
   .credgrid .k{font-size:12px;color:var(--faint);letter-spacing:.04em}
-  .credgrid .v{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--mist);word-break:break-all}
+  .credgrid .v{font-family:var(--font);font-size:13px;color:var(--mist);word-break:break-all}
   .note{border-left:2px solid var(--amber);padding-left:12px}
 
   .foot{margin-top:24px;text-align:center;color:var(--faint);font-size:12px;line-height:1.6}
@@ -201,8 +211,9 @@
     </div>
     <div class="stack">
       <button class="btn ghost" id="copyCreds">Скопировать логин и пароль</button>
-      <button class="btn primary" id="credDone">Я сохранил, продолжить</button>
+      <button class="btn primary" id="credDone" disabled>Я сохранил, продолжить</button>
     </div>
+    <p class="muted" id="credHint" style="margin-top:10px;text-align:center;font-size:12.5px">Кнопка станет активной после копирования.</p>
   </section>
 
   <p class="foot" id="foot"></p>
@@ -214,10 +225,10 @@
 "use strict";
 /* =================== CONFIG (поменять под себя) =================== */
 const CONFIG = {
-  // Базовый путь API. PWA хостится на РФ-боксе (nginx), где /api проксируется на Supabase.
-  // НЕ GitHub Pages: его Билайн режет — страница и API должны идти с whitelisted РФ-IP.
+  // Тест сейчас: ходим напрямую в Supabase Edge Functions (на Wi-Fi/без блокировок — работает).
+  // Когда добавим РФ-прокси — поменять на https://api.<домен> (одна строка), код не трогая.
   API_BASE: "https://fyynjpglyacgxjoknteh.supabase.co/functions/v1",
-  BOT_USERNAME: "GPN_rav_bot",        // <-- username платёжного бота без @
+  BOT_USERNAME: "GPN_rav_bot",     // <-- username платёжного бота без @
   VPN_APP_NAME: "V2Box",           // как называем клиент в инструкциях
   // витрина тарифов (реальная сумма к оплате считается в боте; тут — нетто-ориентир и скидки)
   PLANS: [
@@ -242,10 +253,33 @@ function toast(msg, err=false){
   const t=$("toast"); t.textContent=msg; t.className=(err?"err ":"")+"show";
   clearTimeout(toast._t); toast._t=setTimeout(()=>t.className=t.className.replace("show","").trim(),2200);
 }
+async function copyText(text){
+  // 1) Clipboard API (защищённый контекст: https / GitHub Pages)
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  }catch(_){ /* падаем в запасной путь */ }
+  // 2) execCommand — запасной путь, в т.ч. для старых iOS Safari
+  try{
+    const ta=document.createElement("textarea");
+    ta.value=text; ta.setAttribute("readonly","");
+    ta.style.position="fixed"; ta.style.top="-1000px"; ta.style.opacity="0";
+    document.body.appendChild(ta);
+    const sel=document.getSelection();
+    const saved=sel && sel.rangeCount>0 ? sel.getRangeAt(0) : null;
+    ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+    const ok=document.execCommand("copy");
+    ta.remove();
+    if(saved && sel){ sel.removeAllRanges(); sel.addRange(saved); }
+    return ok;
+  }catch(_){ return false; }
+}
 async function copy(text, label="Скопировано"){
-  try{ await navigator.clipboard.writeText(text); toast(label); }
-  catch{ const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta);
-    ta.select(); document.execCommand("copy"); ta.remove(); toast(label); }
+  const ok=await copyText(text);
+  toast(ok ? label : "Не удалось скопировать — выделите вручную", !ok);
+  return ok;
 }
 async function api(path, body, opts={}){
   const headers={ "Content-Type":"application/json" };
@@ -483,11 +517,21 @@ function btn(label, cls, onClick, disabled){
   if(disabled){ b.disabled=true; } else if(onClick){ b.addEventListener("click",onClick); }
   return b;
 }
+function enableCredDone(){
+  const b=$("credDone"); if(b) b.disabled=false;
+  const h=$("credHint"); if(h) h.classList.add("hidden");
+}
 function wireStaticButtons(){
   $("copyKey").addEventListener("click",()=>{ if(st&&(st.subscription_link)) copy(st.subscription_link,"Ключ скопирован"); });
   $("copyRef").addEventListener("click",()=>{ if(st&&st.referral_code) copy(refLink(),"Ссылка скопирована"); });
-  $("copyCreds").addEventListener("click",()=>{ const c=loadCreds(); if(c) copy("Логин: "+c.username+"\nПароль: "+c.password,"Доступ скопирован"); });
-  $("credDone").addEventListener("click",()=>$("credSec").classList.add("hidden"));
+  $("copyCreds").addEventListener("click",async ()=>{
+    const c=loadCreds(); if(!c) return;
+    const ok=await copy("Логин: "+c.username+"\nПароль: "+c.password,"Логин и пароль скопированы");
+    if(ok) enableCredDone();
+  });
+  // если пользователь выделил и скопировал данные вручную — тоже разблокируем
+  $("credSec").addEventListener("copy",enableCredDone);
+  $("credDone").addEventListener("click",()=>{ if(!$("credDone").disabled) $("credSec").classList.add("hidden"); });
 }
 function fail(title,sub){
   $("statusPill").textContent="нет связи"; $("statusPill").className="pill";
