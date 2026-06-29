@@ -1,795 +1,501 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0a0a0a">
-  <title>GPN — Secure VPN</title>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-  <meta http-equiv="Pragma" content="no-cache"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>GPN — доступ к сети</title>
+<meta name="theme-color" content="#0C1414" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="GPN" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230C1414'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%235BE0C8' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23F2B450'/%3E%3C/svg%3E" />
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22GPN%22%2C%22short_name%22%3A%22GPN%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230C1414%22%2C%22theme_color%22%3A%22%230C1414%22%7D" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+  /* ============ tokens ============ */
+  :root{
+    --ink:#0C1414; --raised:#121E1D; --raised-2:#16201F; --line:#1E302E;
+    --mist:#E6F0ED; --dim:#8AA39E; --faint:#52706B;
+    --teal:#5BE0C8; --teal-deep:#1F4F49;
+    --amber:#F2B450; --amber-deep:#5A4220;
+    --danger:#E2675F;
+    --r:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(120% 80% at 50% -10%, #102826 0%, var(--ink) 60%) fixed,
+      var(--ink);
+    color:var(--mist);
+    font-family:'Manrope',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100dvh;
+    padding:max(20px,env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:440px;margin:0 auto}
 
-  <style>
-    :root {
-      --bg:#09090b; --bg-2:#111113; --bg-3:#19191d; --bg-card:#141416;
-      --border:#27272a; --border-2:#3f3f46;
-      --text:#fafafa; --text-2:#a1a1aa; --text-3:#71717a;
-      --accent:#22d3ee; --accent-2:#06b6d4;
-      --green:#34d399; --green-bg:rgba(52,211,153,.1);
-      --red:#f87171; --red-bg:rgba(248,113,113,.1);
-      --amber:#fbbf24; --amber-bg:rgba(251,191,36,.08);
-      --radius:14px; --t:.3s cubic-bezier(.4,0,.2,1);
-    }
-    *{margin:0;padding:0;box-sizing:border-box}
-    html{height:100%}
-    body{
-      font-family:'Outfit',system-ui,sans-serif;
-      background:var(--bg);color:var(--text);
-      min-height:100%;display:flex;flex-direction:column;
-      -webkit-font-smoothing:antialiased;overflow-x:hidden;
-    }
-    body::before{
-      content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-      opacity:.03;
-      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    }
-    .glow{
-      position:fixed;top:-30vh;left:50%;transform:translateX(-50%);
-      width:80vw;height:60vh;border-radius:50%;
-      background:radial-gradient(ellipse,rgba(34,211,238,.06) 0%,transparent 70%);
-      pointer-events:none;z-index:0;
-    }
-    .preloader{
-      position:fixed;inset:0;background:var(--bg);
-      display:flex;align-items:center;justify-content:center;
-      z-index:9999;transition:opacity .6s ease,visibility .6s ease;
-    }
-    .preloader.hidden{opacity:0;visibility:hidden;pointer-events:none}
-    .preloader .ring{
-      width:44px;height:44px;border:2.5px solid var(--border);
-      border-top-color:var(--accent);border-radius:50%;
-      animation:spin .8s linear infinite;
-    }
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .screen{
-      flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-      padding:24px;position:relative;z-index:1;
-      opacity:0;visibility:hidden;transition:opacity .5s ease,visibility 0s linear .5s;
-    }
-    .screen.visible{opacity:1;visibility:visible;transition:opacity .5s ease,visibility 0s linear 0s}
-    .screen.app-screen{justify-content:flex-start;padding-top:56px}
-    .auth-logo{margin-bottom:48px;text-align:center}
-    .auth-logo h1{
-      font-size:42px;font-weight:800;letter-spacing:-.04em;
-      background:linear-gradient(135deg,var(--accent) 0%,#a78bfa 50%,var(--accent) 100%);
-      background-size:200% 200%;animation:shimmer 4s ease infinite;
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-    }
-    @keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-    .auth-logo p{font-size:15px;color:var(--text-3);margin-top:8px;font-weight:300}
-    .google-btn{
-      display:flex;align-items:center;gap:14px;
-      padding:16px 32px;background:var(--bg-card);border:1px solid var(--border);
-      border-radius:16px;cursor:pointer;transition:all var(--t);
-      font-family:inherit;font-size:15px;font-weight:500;color:var(--text);
-      box-shadow:0 2px 12px rgba(0,0,0,.3);
-    }
-    .google-btn:hover{border-color:var(--border-2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
-    .google-btn:active{transform:translateY(0)}
-    .google-btn svg{width:20px;height:20px;flex-shrink:0}
-    .google-btn.loading .g-text{opacity:.4}
-    .google-btn .spin-small{display:none;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
-    .google-btn.loading .spin-small{display:block}
-    .google-btn.loading svg{display:none}
-    .auth-footer{margin-top:32px;font-size:12px;color:var(--text-3);text-align:center;max-width:280px;line-height:1.6}
-    .top-bar{
-      display:flex;align-items:center;justify-content:space-between;
-      width:100%;max-width:440px;margin-bottom:28px;
-    }
-    .top-bar .logo{font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--accent)}
-    .user-pill{
-      display:flex;align-items:center;gap:8px;
-      padding:6px 12px 6px 6px;background:var(--bg-3);border:1px solid var(--border);
-      border-radius:24px;cursor:pointer;transition:all var(--t);
-    }
-    .user-pill:hover{border-color:var(--border-2)}
-    .user-pill img{width:28px;height:28px;border-radius:50%;object-fit:cover}
-    .user-pill .uname{font-size:12px;color:var(--text-2);font-weight:500;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .status-card{
-      width:100%;max-width:440px;background:var(--bg-card);
-      border:1px solid var(--border);border-radius:20px;
-      padding:28px;margin-bottom:16px;position:relative;overflow:hidden;
-    }
-    .status-card::before{
-      content:'';position:absolute;top:0;right:0;width:200px;height:200px;
-      background:radial-gradient(circle,rgba(34,211,238,.04) 0%,transparent 70%);
-      pointer-events:none;
-    }
-    .status-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-    .status-label{font-size:13px;color:var(--text-3);font-weight:400}
-    .chip{
-      display:inline-flex;align-items:center;gap:6px;
-      padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;
-    }
-    .chip.active{background:var(--green-bg);color:var(--green)}
-    .chip.inactive{background:var(--red-bg);color:var(--red)}
-    .chip.loading{background:var(--amber-bg);color:var(--amber)}
-    .chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-    .days-num{font-size:48px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--text)}
-    .days-label{font-size:13px;color:var(--text-3);margin-top:4px;font-weight:300}
-    .actions{width:100%;max-width:440px;display:flex;flex-direction:column;gap:10px}
-    .act-btn{
-      display:flex;align-items:center;gap:14px;
-      padding:16px 18px;background:var(--bg-card);
-      border:1px solid var(--border);border-radius:var(--radius);
-      cursor:pointer;transition:all var(--t);
-      text-align:left;font-family:inherit;color:var(--text);
-    }
-    .act-btn:hover{border-color:var(--border-2);background:var(--bg-3)}
-    .act-btn:disabled{opacity:.3;cursor:not-allowed;pointer-events:none}
-    .act-btn .ico{
-      width:42px;height:42px;border-radius:11px;
-      display:flex;align-items:center;justify-content:center;
-      font-size:18px;flex-shrink:0;
-    }
-    .act-btn .ico.pay{background:rgba(251,191,36,.1)}
-    .act-btn .ico.dl{background:linear-gradient(135deg,rgba(34,211,238,.18),rgba(34,211,238,.08));border:1px solid rgba(34,211,238,.2)}
-    .act-btn .ico.cp{background:rgba(167,139,250,.1)}
-    .act-btn.featured{
-      background:linear-gradient(135deg,rgba(34,211,238,.06),rgba(34,211,238,.02));
-      border-color:rgba(34,211,238,.25);
-    }
-    .act-btn.featured:hover{border-color:var(--accent)}
-    .act-title{font-size:14px;font-weight:600}
-    .act-desc{font-size:12px;color:var(--text-3);margin-top:2px}
-    .pay-status{
-      width:100%;max-width:440px;margin-top:12px;
-      padding:14px 18px;background:var(--amber-bg);
-      border:1px solid rgba(251,191,36,.15);border-radius:12px;
-      font-size:13px;color:var(--amber);display:none;
-      animation:pulse-border 2s ease infinite;
-    }
-    @keyframes pulse-border{0%,100%{border-color:rgba(251,191,36,.15)}50%{border-color:rgba(251,191,36,.35)}}
-    .overlay{
-      position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
-      z-index:5000;opacity:0;visibility:hidden;
-      transition:opacity .3s ease,visibility 0s linear .3s;
-    }
-    .overlay.visible{opacity:1;visibility:visible;transition:opacity .3s ease,visibility 0s linear 0s}
-    .sheet{
-      position:fixed;bottom:0;left:0;right:0;
-      background:var(--bg-2);border:1px solid var(--border);
-      border-radius:20px 20px 0 0;border-bottom:none;
-      padding:16px 20px 36px;z-index:5001;
-      transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);
-      max-height:88vh;overflow-y:auto;
-    }
-    .overlay.visible .sheet{transform:translateY(0)}
-    .sheet-handle{width:36px;height:4px;background:var(--border-2);border-radius:2px;margin:0 auto 20px}
-    .sheet h3{font-size:18px;font-weight:700;margin-bottom:8px}
-    .sheet .sdesc{font-size:13px;color:var(--text-3);margin-bottom:18px;line-height:1.55}
+  /* ============ header ============ */
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;letter-spacing:.04em}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 4px var(--amber-deep)}
+  .brand.live .dot{background:var(--teal);box-shadow:0 0 0 4px var(--teal-deep)}
+  .pill{font-size:12px;font-weight:600;letter-spacing:.03em;color:var(--dim);
+    border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap}
+  .pill.on{color:var(--teal);border-color:var(--teal-deep)}
+  .pill.warn{color:var(--amber);border-color:var(--amber-deep)}
 
-    .step{
-      display:flex;gap:12px;padding:12px 14px;
-      background:var(--bg-3);border:1px solid var(--border);
-      border-radius:12px;margin-bottom:8px;
-    }
-    .step-num{
-      flex-shrink:0;width:24px;height:24px;border-radius:50%;
-      background:var(--accent);color:var(--bg);
-      display:flex;align-items:center;justify-content:center;
-      font-size:12px;font-weight:700;
-    }
-    .step-text{font-size:13px;line-height:1.5;color:var(--text-2)}
-    .step-text b{color:var(--text)}
+  /* ============ key card (signature) ============ */
+  .card{background:var(--raised);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+  .keycard{position:relative;overflow:hidden;text-align:center;padding:30px 22px 24px}
+  .ring{width:104px;height:104px;margin:2px auto 16px;position:relative}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .track{stroke:var(--line)}
+  .ring .prog{stroke:var(--amber);stroke-linecap:round;transition:stroke-dashoffset .6s linear,stroke .4s}
+  .live .ring .prog{stroke:var(--teal)}
+  .ring .core{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;color:var(--dim);letter-spacing:.02em}
+  .live .ring .core{color:var(--teal)}
+  @media(prefers-reduced-motion:no-preference){
+    .live .ring{animation:breathe 3.4s ease-in-out infinite}
+  }
+  @keyframes breathe{0%,100%{opacity:1}50%{opacity:.72}}
 
-    .download-btn{
-      display:flex;align-items:center;justify-content:center;gap:10px;
-      width:100%;padding:16px 20px;margin:14px 0;
-      background:linear-gradient(135deg,var(--accent),var(--accent-2));
-      color:var(--bg);font-weight:700;font-size:15px;
-      border:none;border-radius:14px;cursor:pointer;
-      transition:all var(--t);font-family:inherit;
-      text-decoration:none;
-    }
-    .download-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(34,211,238,.25)}
-    .download-btn:active{transform:translateY(0)}
+  .state-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;margin:0 0 6px}
+  .state-sub{color:var(--dim);font-size:14.5px;line-height:1.5;margin:0 auto;max-width:300px}
 
-    .sheet-copy-btn{
-      display:flex;align-items:center;justify-content:center;gap:10px;
-      width:100%;padding:14px;margin:6px 0;
-      background:var(--bg-card);border:1px solid var(--border);
-      color:var(--text);font-weight:600;font-size:14px;
-      border-radius:12px;cursor:pointer;
-      transition:all var(--t);font-family:inherit;
-    }
-    .sheet-copy-btn:hover{border-color:var(--border-2);background:var(--bg-3)}
+  /* the key itself */
+  .keyblock{margin-top:20px;text-align:left}
+  .keylabel{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+  .keyrow{display:flex;gap:8px}
+  .keyval{flex:1;min-width:0;background:var(--ink);border:1px solid var(--line);border-radius:11px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mist);
+    padding:12px 13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-    .app-row{
-      display:flex;align-items:center;gap:14px;
-      padding:14px 16px;border-radius:12px;
-      background:var(--bg-3);border:1px solid var(--border);
-      margin-bottom:8px;cursor:pointer;transition:all var(--t);
-      width:100%;text-align:left;font-family:inherit;color:var(--text);
-      text-decoration:none;
-    }
-    .app-row:hover{background:var(--bg-card);border-color:var(--border-2)}
-    .app-row .aicon{
-      width:38px;height:38px;border-radius:9px;
-      display:flex;align-items:center;justify-content:center;
-      font-size:15px;font-weight:700;flex-shrink:0;
-      background:var(--accent);color:var(--bg);
-    }
-    .app-row .ainfo{flex:1;min-width:0}
-    .app-row .aname{font-size:14px;font-weight:600}
-    .app-row .anote{font-size:11px;color:var(--text-3);margin-top:2px}
-    .app-row .arrow{color:var(--text-3);font-size:16px;flex-shrink:0}
+  /* ============ buttons ============ */
+  .btn{appearance:none;border:0;border-radius:12px;font-family:inherit;font-weight:600;font-size:15px;
+    padding:14px 16px;width:100%;cursor:pointer;transition:transform .08s,filter .15s,opacity .15s;
+    display:flex;align-items:center;justify-content:center;gap:8px}
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+  .btn.primary{background:var(--amber);color:#241a08}
+  .btn.go{background:var(--teal);color:#06231f}
+  .btn.ghost{background:transparent;color:var(--mist);border:1px solid var(--line)}
+  .btn.icon{width:auto;padding:12px 14px}
+  .btn[disabled]{opacity:.4;cursor:default}
+  .btn-dim{opacity:.45}
+  .stack{display:flex;flex-direction:column;gap:10px;margin-top:18px}
 
-    .divider{
-      display:flex;align-items:center;gap:12px;
-      margin:18px 0;color:var(--text-3);font-size:11px;
-      text-transform:uppercase;letter-spacing:.05em;
-    }
-    .divider::before,.divider::after{
-      content:'';flex:1;height:1px;background:var(--border);
-    }
+  /* ============ generic sections ============ */
+  .sec{margin-top:14px}
+  .muted{color:var(--dim);font-size:14px;line-height:1.55}
+  .eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:0 0 10px}
 
-    .sheet-close{
-      width:100%;padding:12px;margin-top:14px;
-      background:transparent;border:1px dashed var(--border);
-      border-radius:12px;cursor:pointer;font-family:inherit;
-      font-size:13px;color:var(--text-3);transition:all var(--t);
-    }
-    .sheet-close:hover{border-color:var(--border-2);color:var(--text-2)}
+  /* plans */
+  .plans{display:flex;flex-direction:column;gap:9px}
+  .plan{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:13px 15px;cursor:pointer;
+    transition:border-color .15s,background .15s}
+  .plan:hover,.plan:focus-visible{border-color:var(--amber-deep);outline:none}
+  .plan .pname{font-weight:600;font-size:15px}
+  .plan .pmeta{font-size:12.5px;color:var(--dim);margin-top:2px}
+  .plan .pprice{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;white-space:nowrap}
+  .plan .save{display:inline-block;font-size:10.5px;font-weight:600;color:var(--teal);
+    border:1px solid var(--teal-deep);border-radius:6px;padding:1px 6px;margin-left:7px;vertical-align:middle}
 
-    .toast{
-      position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(80px);
-      background:var(--bg-card);border:1px solid var(--border);color:var(--text);
-      padding:12px 24px;border-radius:12px;font-size:13px;font-weight:500;
-      z-index:9999;opacity:0;transition:all .35s ease;
-      box-shadow:0 8px 32px rgba(0,0,0,.4);
-      max-width:90vw;
-    }
-    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* steps */
+  ol.steps{margin:0;padding:0;list-style:none;counter-reset:s}
+  ol.steps li{counter-increment:s;display:flex;gap:12px;padding:9px 0;font-size:14px;color:var(--mist);line-height:1.45}
+  ol.steps li::before{content:counter(s);flex:none;width:24px;height:24px;border-radius:7px;
+    background:var(--ink);border:1px solid var(--line);color:var(--dim);
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;
+    display:flex;align-items:center;justify-content:center}
 
-    .user-menu{
-      position:fixed;top:70px;right:24px;
-      background:var(--bg-2);border:1px solid var(--border);
-      border-radius:12px;padding:6px;min-width:160px;
-      box-shadow:0 12px 40px rgba(0,0,0,.5);
-      z-index:3000;opacity:0;visibility:hidden;
-      transform:translateY(-8px);transition:all .2s ease;
-    }
-    .user-menu.visible{opacity:1;visibility:visible;transform:translateY(0)}
-    .user-menu button{
-      display:block;width:100%;padding:10px 14px;
-      background:transparent;border:none;border-radius:8px;
-      font-family:inherit;font-size:13px;font-weight:500;
-      color:var(--text-2);cursor:pointer;text-align:left;transition:all var(--t);
-    }
-    .user-menu button:hover{background:var(--bg-3);color:var(--red)}
-    @media(max-width:480px){
-      .days-num{font-size:40px}
-      .auth-logo h1{font-size:36px}
-    }
-  </style>
+  /* referral + creds */
+  .strip{display:flex;align-items:center;gap:12px;justify-content:space-between}
+  .credgrid{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin-top:14px;align-items:center}
+  .credgrid .k{font-size:12px;color:var(--faint);letter-spacing:.04em}
+  .credgrid .v{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--mist);word-break:break-all}
+  .note{border-left:2px solid var(--amber);padding-left:12px}
+
+  .foot{margin-top:24px;text-align:center;color:var(--faint);font-size:12px;line-height:1.6}
+  .hidden{display:none!important}
+
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+    background:var(--raised);border:1px solid var(--line);color:var(--mist);font-size:13.5px;font-weight:500;
+    padding:11px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:50;box-shadow:0 8px 30px #0008}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.err{border-color:var(--danger);color:var(--danger)}
+
+  .spin{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--mist);border-radius:50%;
+    animation:rot .7s linear infinite;display:inline-block}
+  @keyframes rot{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
-  <div class="glow"></div>
-  <div class="preloader" id="preloader"><div class="ring"></div></div>
+<div class="wrap">
+  <header>
+    <div class="brand" id="brand"><span class="dot"></span>GPN</div>
+    <div class="pill" id="statusPill">соединение…</div>
+  </header>
 
-  <div class="screen" id="authScreen">
-    <div class="auth-logo">
-      <h1>GPN</h1>
-      <p>Быстрый и приватный VPN</p>
+  <!-- ============ HERO / KEY CARD ============ -->
+  <section class="card keycard" id="hero">
+    <div class="ring" id="ring">
+      <svg width="104" height="104" viewBox="0 0 104 104">
+        <circle class="track" cx="52" cy="52" r="47" fill="none" stroke-width="3"/>
+        <circle class="prog" id="ringProg" cx="52" cy="52" r="47" fill="none" stroke-width="3"
+                stroke-dasharray="295.3" stroke-dashoffset="295.3"/>
+      </svg>
+      <div class="core" id="ringCore">—</div>
     </div>
-    <button class="google-btn" id="googleBtn" onclick="signInWithGoogle()">
-      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      <span class="g-text">Войти через Google</span>
-      <div class="spin-small"></div>
-    </button>
-    <div class="auth-footer">Авторизуясь, вы получаете доступ к управлению VPN-подпиской</div>
-  </div>
+    <h1 class="state-title" id="stateTitle">Загрузка</h1>
+    <p class="state-sub" id="stateSub">Проверяем доступ…</p>
 
-  <div class="screen app-screen" id="appScreen">
-    <div class="top-bar">
-      <div class="logo">GPN</div>
-      <div class="user-pill" id="userPill" onclick="toggleUserMenu()">
-        <img id="userAvatar" src="" alt=""/>
-        <span class="uname" id="userName"></span>
+    <!-- key value (shown when a key exists) -->
+    <div class="keyblock hidden" id="keyBlock">
+      <div class="keylabel" id="keyLabel">Ключ доступа</div>
+      <div class="keyrow">
+        <div class="keyval" id="keyVal">—</div>
+        <button class="btn ghost icon" id="copyKey" title="Скопировать">Копировать</button>
       </div>
     </div>
 
-    <div class="user-menu" id="userMenu">
-      <button onclick="logout()">Выйти из аккаунта</button>
-    </div>
+    <div class="stack" id="heroActions"></div>
+  </section>
 
-    <div class="status-card">
-      <div class="status-row">
-        <span class="status-label">Подписка</span>
-        <span class="chip loading" id="statusChip">
-          <span class="dot"></span>
-          <span id="statusText">Проверка...</span>
-        </span>
+  <!-- ============ PLANS ============ -->
+  <section class="sec card hidden" id="plansSec">
+    <p class="eyebrow">Подписка</p>
+    <div class="plans" id="plans"></div>
+    <p class="muted" style="margin-top:12px">Оплата в Telegram — звёздами Stars или в TON. Точная сумма к оплате покажется в боте; <b>в TON выгоднее</b>.</p>
+  </section>
+
+  <!-- ============ HOW-TO ============ -->
+  <section class="sec card hidden" id="howSec">
+    <p class="eyebrow" id="howTitle">Как подключиться</p>
+    <ol class="steps" id="howSteps"></ol>
+  </section>
+
+  <!-- ============ REFERRAL ============ -->
+  <section class="sec card hidden" id="refSec">
+    <div class="strip">
+      <div>
+        <p class="eyebrow" style="margin-bottom:4px">Приглашай друзей</p>
+        <p class="muted" id="refText">Друг оплачивает — тебе бонусные дни.</p>
       </div>
-      <div class="days-num" id="daysCount">—</div>
-      <div class="days-label">дней осталось</div>
+      <button class="btn primary icon" id="copyRef">Ссылка</button>
     </div>
+  </section>
 
-    <div class="actions">
-      <button class="act-btn" id="payBtn">
-        <div class="ico pay">⭐</div>
-        <div>
-          <div class="act-title" id="payTitle">Оплатить через Telegram Stars</div>
-          <div class="act-desc">Быстрая оплата звёздами в Telegram</div>
-        </div>
-      </button>
-
-      <button class="act-btn featured" id="installBtn" disabled>
-        <div class="ico dl">📲</div>
-        <div>
-          <div class="act-title">Установить на устройство</div>
-          <div class="act-desc" id="installDesc">Подключение в один тап</div>
-        </div>
-      </button>
-
-      <button class="act-btn" id="copyBtn" disabled>
-        <div class="ico cp">📋</div>
-        <div>
-          <div class="act-title">Скопировать VLESS-ключ</div>
-          <div class="act-desc">Прямая ссылка для импорта в любой клиент</div>
-        </div>
-      </button>
+  <!-- ============ FIRST-VISIT CREDENTIALS ============ -->
+  <section class="sec card hidden" id="credSec">
+    <p class="eyebrow">Сохраните доступ</p>
+    <p class="muted note">Это ваш аккаунт. Запишите — по нему восстановите подписку, если очистите браузер или смените устройство.</p>
+    <div class="credgrid">
+      <div class="k">Логин</div><div class="v" id="credUser">—</div>
+      <div class="k">Пароль</div><div class="v" id="credPass">—</div>
     </div>
-
-    <div class="pay-status" id="payStatus">⏳ Ожидание оплаты... Завершите оплату в Telegram и вернитесь сюда.</div>
-  </div>
-
-  <div class="overlay" id="sheetOverlay">
-    <div class="sheet" id="installSheet">
-      <div class="sheet-handle"></div>
-      <div id="sheetContent"></div>
-      <button class="sheet-close" onclick="closeSheet()">Закрыть</button>
+    <div class="stack">
+      <button class="btn ghost" id="copyCreds">Скопировать логин и пароль</button>
+      <button class="btn primary" id="credDone">Я сохранил, продолжить</button>
     </div>
-  </div>
+  </section>
 
-  <div class="toast" id="toast"></div>
+  <p class="foot" id="foot"></p>
+</div>
 
-  <script>
-    // ==========================================
-    // ⚙️  CONFIGURATION
-    // ==========================================
-    const SUPABASE_URL  = 'https://fyynjpglyacgxjoknteh.supabase.co';
-    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5eW5qcGdseWFjZ3hqb2tudGVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4OTMwMDQsImV4cCI6MjA4NDQ2OTAwNH0.E3Km0BprWfvJxjXBiKbfLsM2cvlSmpOmknJWGTahnco';
-    const BOT_USERNAME  = 'VPN_HIVE_BOT';
-    const FUNCTION_URL  = `${SUPABASE_URL}/functions/v1/VPN_Aleksander`;
+<div id="toast"></div>
 
-    // 📦 Прямая ссылка на скачивание GPN.apk (форк v2rayNG)
-    // Когда соберёте APK — пропишите сюда HTTPS-ссылку (GitHub Releases / свой CDN)
-    // Пока пусто — на Android будет показано «В разработке»
-    const ANDROID_APK_URL = 'https://github.com/Alchemist8931/v2rayNG-GPN/releases/download/v1.0.0/gpn-1.0.0-universal.apk';
-    const ANDROID_APK_VERSION = '1.0.0';
-    // ==========================================
+<script>
+"use strict";
+/* =================== CONFIG (поменять под себя) =================== */
+const CONFIG = {
+  // Базовый путь API. PWA хостится на РФ-боксе (nginx), где /api проксируется на Supabase.
+  // НЕ GitHub Pages: его Билайн режет — страница и API должны идти с whitelisted РФ-IP.
+  API_BASE: "/api",
+  BOT_USERNAME: "YOUR_BOT",        // <-- username платёжного бота без @
+  VPN_APP_NAME: "V2Box",           // как называем клиент в инструкциях
+  // витрина тарифов (реальная сумма к оплате считается в боте; тут — нетто-ориентир и скидки)
+  PLANS: [
+    { id:"1m",  name:"1 месяц",   months:1,  rub:100, save:null },
+    { id:"3m",  name:"3 месяца",  months:3,  rub:240, save:"−20%" },
+    { id:"12m", name:"12 месяцев",months:12, rub:720, save:"−40%" },
+  ],
+};
+const RING_LEN = 295.3; // 2πr, r=47
 
-    let sb = null;
-    let profile = null;
-    let pollTimer = null;
-    let currentPayToken = null;
+/* =================== state =================== */
+const LS = { creds:"gpn_creds", token:"gpn_token" };
+let token = null;
+let st = null;            // последнее состояние сервера
+let trialExpiresAt = null;
+let pollTimer = null, tickTimer = null;
 
-    let cachedVless = null;
-    let cachedAt = 0;
-    const CACHE_MS = 60_000;
+/* =================== helpers =================== */
+const $ = (id)=>document.getElementById(id);
+const fmtDate = (iso)=> new Date(iso).toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
+function toast(msg, err=false){
+  const t=$("toast"); t.textContent=msg; t.className=(err?"err ":"")+"show";
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.className=t.className.replace("show","").trim(),2200);
+}
+async function copy(text, label="Скопировано"){
+  try{ await navigator.clipboard.writeText(text); toast(label); }
+  catch{ const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy"); ta.remove(); toast(label); }
+}
+async function api(path, body, opts={}){
+  const headers={ "Content-Type":"application/json" };
+  if(opts.auth && token) headers["Authorization"]="Bearer "+token;
+  const res = await fetch(CONFIG.API_BASE+path, { method:"POST", headers, body:JSON.stringify(body||{}) });
+  let data=null; try{ data=await res.json(); }catch{}
+  if(!res.ok) throw Object.assign(new Error((data&&data.error)||("HTTP "+res.status)),{status:res.status,data});
+  return data;
+}
+function setRing(fraction, coreText){           // fraction 0..1 заполнения
+  const f=Math.max(0,Math.min(1,fraction));
+  $("ringProg").style.strokeDashoffset = String(RING_LEN*(1-f));
+  $("ringCore").textContent = coreText;
+}
 
-    try {
-      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
-        auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, flowType: 'implicit' }
-      });
-    } catch(e) { console.error('Supabase init error:', e); }
-
-    window.addEventListener('load', async () => {
-      await new Promise(r => setTimeout(r, 600));
-      if (!sb) {
-        document.getElementById('preloader').classList.add('hidden');
-        showScreen('auth'); return;
-      }
-      const { data: { session } } = await sb.auth.getSession();
-      document.getElementById('preloader').classList.add('hidden');
-      if (session) await enterApp(session);
-      else showScreen('auth');
-      sb.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session && !profile) await enterApp(session);
-        if (event === 'SIGNED_OUT') { profile = null; showScreen('auth'); }
-      });
-    });
-
-    document.addEventListener('visibilitychange', async () => {
-      if (!document.hidden && profile) await refreshProfile();
-    });
-    window.addEventListener('focus', async () => {
-      if (profile) await refreshProfile();
-    });
-
-    async function refreshProfile() {
-      const token = await getToken();
-      if (!token) return;
-      try {
-        const data = await apiCall(token, 'get-profile', {});
-        const oldPaidUntil = profile?.paid_until || 0;
-        profile = data.profile;
-        updateUI();
-        if ((profile.paid_until || 0) > oldPaidUntil) {
-          if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-          document.getElementById('payStatus').style.display = 'none';
-          clearCache();
-          if (oldPaidUntil > 0) toast('✅ Подписка продлена!');
-          else toast('✅ Подписка активирована!');
-        }
-      } catch(e) { console.error('refreshProfile error:', e); }
+/* =================== bootstrap =================== */
+window.addEventListener("DOMContentLoaded", init);
+async function init(){
+  wireStaticButtons();
+  const ref = new URLSearchParams(location.search).get("ref");
+  const saved = loadCreds();
+  try{
+    if(saved){
+      const r = await api("/register-and-auth", { username:saved.username, password:saved.password });
+      token=r.token; persistToken(token); apply(r.state);
+    }else{
+      const r = await api("/register-and-auth", ref?{ref}:{});
+      token=r.token; persistToken(token);
+      if(r.credentials){ saveCreds(r.credentials); showCreds(r.credentials); }
+      apply(r.state);
     }
+    startPolling();
+  }catch(e){
+    fail("Не удалось подключиться", "Проверьте, что VPN-доступ к сети открыт, и обновите страницу.");
+  }
+}
 
-    function clearCache() {
-      cachedVless = null; cachedAt = 0;
-    }
+/* =================== render =================== */
+function apply(state){
+  st = state || {};
+  // header
+  const active = st.has_active;
+  const paid = st.current_kind==="paid" && active;
+  $("brand").classList.toggle("live", paid);
+  setPill(st);
+  // основной экран по состоянию
+  if(paid)            renderPaid();
+  else if(st.current_kind==="trial" && active) renderTrial();
+  else                renderNone();
+  // рефералка всегда (если знаем код)
+  renderReferral();
+  renderFoot();
+}
 
-    function showScreen(name) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
-      document.getElementById(name === 'auth' ? 'authScreen' : 'appScreen').classList.add('visible');
-    }
+function setPill(s){
+  const p=$("statusPill");
+  if(s.current_kind==="paid" && s.has_active){ p.textContent="подписка активна"; p.className="pill on"; }
+  else if(s.current_kind==="trial" && s.has_active){ p.textContent="пробный доступ"; p.className="pill warn"; }
+  else { p.textContent="нет ключа"; p.className="pill"; }
+}
 
-    async function signInWithGoogle() {
-      const btn = document.getElementById('googleBtn');
-      btn.classList.add('loading');
-      try {
-        const { error } = await sb.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: window.location.origin + window.location.pathname }
-        });
-        if (error) throw error;
-      } catch(e) {
-        toast('Ошибка авторизации: ' + e.message);
-        btn.classList.remove('loading');
-      }
-    }
+/* ---- состояние: НЕТ ключа ---- */
+function renderNone(){
+  stopTick();
+  setRing(0, "•");
+  $("stateTitle").textContent="Нужен ключ для оплаты";
+  $("stateSub").innerHTML="Telegram без VPN недоступен. Возьмите бесплатный ключ на 30 минут, "
+    +"подключитесь к нему в «"+CONFIG.VPN_APP_NAME+"», затем оплатите подписку в боте.";
+  $("keyBlock").classList.add("hidden");
+  const cool = st.trial_next_at && new Date(st.trial_next_at)>new Date();
+  const acts=$("heroActions"); acts.innerHTML="";
+  if(cool){
+    const h=Math.ceil((new Date(st.trial_next_at)-new Date())/3.6e6);
+    acts.appendChild(btn("Бесплатный ключ — через "+h+" ч","ghost",null,true));
+  }else{
+    acts.appendChild(btn("Взять ключ на 30 минут","primary",onTrial));
+  }
+  showPlans(true);
+  showHow("pay");
+}
 
-    async function enterApp(session) {
-      showScreen('app');
-      const user = session.user;
-      const meta = user.user_metadata || {};
-      document.getElementById('userName').textContent = meta.full_name || meta.name || user.email || '';
-      document.getElementById('userAvatar').src = meta.avatar_url || meta.picture || '';
-      try {
-        const data = await apiCall(session.access_token, 'get-profile', {});
-        profile = data.profile;
-        updateUI();
-      } catch(e) {
-        console.error('get-profile error:', e);
-        toast('Ошибка загрузки профиля');
-      }
-    }
+/* ---- состояние: ТРИАЛ активен ---- */
+function renderTrial(){
+  if(st.current_expires_at) trialExpiresAt=new Date(st.current_expires_at);
+  $("stateTitle").textContent="Ключ активен";
+  $("stateSub").textContent="Подключитесь к нему в «"+CONFIG.VPN_APP_NAME+"» и оплатите подписку в боте, пока есть доступ к Telegram.";
+  showKey("Пробный ключ (30 минут)", st.subscription_link || st.trial_key);
+  const acts=$("heroActions"); acts.innerHTML="";
+  acts.appendChild(btn("Оплатить подписку","primary",()=>$("plansSec").scrollIntoView({behavior:"smooth"})));
+  showPlans(true);
+  showHow("pay");
+  startTick();
+}
 
-    async function apiCall(token, action, payload) {
-      const res = await fetch(FUNCTION_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON,
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ action, payload })
-      });
-      let data = {};
-      try { data = await res.json(); } catch(e) { throw new Error(`Server error ${res.status}`); }
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      return data;
-    }
+/* ---- состояние: ОПЛАЧЕНО ---- */
+function renderPaid(){
+  stopTick();
+  setRing(1, "ON");
+  $("stateTitle").textContent="Подписка активна";
+  $("stateSub").textContent = st.current_expires_at ? ("Действует до "+fmtDate(st.current_expires_at)+".") : "Доступ открыт.";
+  showKey("Постоянный ключ", st.subscription_link);
+  const acts=$("heroActions"); acts.innerHTML="";
+  acts.appendChild(btn("Подключить","go",onConnect));
+  acts.appendChild(btn("Продлить","ghost dim btn-dim",()=>{ showPlans(true); $("plansSec").scrollIntoView({behavior:"smooth"}); }));
+  showPlans(false);
+  showHow("connect");
+}
 
-    async function getToken() {
-      const { data: { session } } = await sb.auth.getSession();
-      return session?.access_token || null;
-    }
+function showKey(label, value){
+  $("keyBlock").classList.remove("hidden");
+  $("keyLabel").textContent=label;
+  $("keyVal").textContent=value || "—";
+}
 
-    function updateUI() {
-      if (!profile) return;
-      const now = Math.floor(Date.now() / 1000);
-      const pu = profile.paid_until || 0;
-      const days = Math.max(0, Math.ceil((pu - now) / 86400));
-      const active = days > 0;
-      const chip = document.getElementById('statusChip');
-      chip.className = 'chip ' + (active ? 'active' : 'inactive');
-      document.getElementById('statusText').textContent = active ? 'Активна' : 'Неактивна';
-      document.getElementById('daysCount').textContent = days;
-      document.getElementById('payTitle').textContent = active
-        ? 'Продлить через Telegram Stars'
-        : 'Оплатить через Telegram Stars';
-      document.getElementById('installBtn').disabled = !active;
-      document.getElementById('copyBtn').disabled = !active;
+/* =================== actions =================== */
+async function onTrial(e){
+  const b=e.currentTarget; const old=b.innerHTML; b.disabled=true; b.innerHTML='<span class="spin"></span>';
+  try{
+    const r = await api("/issue-trial", {}, {auth:true});
+    // ожидаемый ответ: { key, expires_at }  ИЛИ  { error:'cooldown', next_at }
+    st.current_kind="trial"; st.has_active=true;
+    st.subscription_link=r.key; st.current_expires_at=r.expires_at;
+    apply(st); toast("Ключ выдан на 30 минут");
+  }catch(err){
+    if(err.data && err.data.next_at){ st.trial_next_at=err.data.next_at; apply(st); }
+    else toast(err.status===404 ? "Выдача ключей скоро включится" : "Не получилось выдать ключ", true);
+    b.disabled=false; b.innerHTML=old;
+  }
+}
 
-      // Описание кнопки «Установить» меняем по платформе
-      const platform = getPlatform();
-      const installDesc = document.getElementById('installDesc');
-      if (platform === 'android')      installDesc.textContent = 'Скачать приложение GPN';
-      else if (platform === 'ios')     installDesc.textContent = 'Инструкция и список приложений';
-      else                             installDesc.textContent = 'Инструкция для вашего устройства';
-    }
+async function onPay(plan){
+  try{
+    const r = await api("/create-payment-intent", { plan }, {auth:true});
+    const url = "https://t.me/"+CONFIG.BOT_USERNAME+"?start="+encodeURIComponent(r.token);
+    location.href = url;
+  }catch(err){
+    toast(err.status===404 ? "Оплата скоро включится" : "Не удалось начать оплату", true);
+  }
+}
 
-    document.getElementById('payBtn').addEventListener('click', async () => {
-      const win = window.open('about:blank', '_blank');
-      const token = await getToken();
-      if (!token) { if (win) win.close(); return toast('Сессия истекла, войдите заново'); }
-      try {
-        const data = await apiCall(token, 'create-payment', { plan: '1m' });
-        currentPayToken = data.token;
-        const payStatus = document.getElementById('payStatus');
-        payStatus.innerHTML = '⏳ Ожидание оплаты... Завершите оплату в Telegram и вернитесь сюда.';
-        payStatus.style.display = 'block';
-        if (win && !win.closed) {
-          win.location.href = data.botUrl;
-        } else {
-          const fallbackBtn = document.createElement('a');
-          fallbackBtn.href = data.botUrl;
-          fallbackBtn.target = '_blank';
-          fallbackBtn.textContent = '👉 Открыть Telegram-бота';
-          fallbackBtn.style.cssText = 'display:block;margin-top:12px;color:var(--accent);text-decoration:underline;font-weight:600;';
-          payStatus.appendChild(fallbackBtn);
-        }
-        startPaymentPolling(token, data.token);
-      } catch(e) {
-        if (win) win.close();
-        toast('Ошибка: ' + e.message);
-      }
-    });
+function onConnect(){
+  // у браузера нет универсального импорта в VPN-клиент — копируем ключ и ведём в приложение
+  copy(st.subscription_link, "Ключ скопирован — вставьте в "+CONFIG.VPN_APP_NAME);
+}
 
-    function startPaymentPolling(accessToken, payToken) {
-      if (pollTimer) clearInterval(pollTimer);
-      let attempts = 0;
-      const maxAttempts = 120;
-      pollTimer = setInterval(async () => {
-        attempts++;
-        if (attempts > maxAttempts) {
-          clearInterval(pollTimer); pollTimer = null;
-          document.getElementById('payStatus').style.display = 'none';
-          return;
-        }
-        try {
-          const freshToken = await getToken();
-          if (!freshToken) return;
-          const data = await apiCall(freshToken, 'check-payment', { token: payToken });
-          if (data.paid) {
-            clearInterval(pollTimer); pollTimer = null;
-            document.getElementById('payStatus').style.display = 'none';
-            profile = data.profile;
-            clearCache();
-            updateUI();
-            toast('✅ Оплата прошла! Подписка активна.');
-          }
-        } catch(e) { console.error('Poll error:', e); }
-      }, 5000);
-    }
+/* =================== plans / how / referral =================== */
+function showPlans(show){
+  $("plansSec").classList.toggle("hidden",!show);
+  if(!show) return;
+  const box=$("plans"); box.innerHTML="";
+  CONFIG.PLANS.forEach(p=>{
+    const el=document.createElement("div"); el.className="plan"; el.tabIndex=0; el.role="button";
+    el.innerHTML=`<div><div class="pname">${p.name}${p.save?`<span class="save">${p.save}</span>`:""}</div>
+      <div class="pmeta">${Math.round(p.rub/p.months)} ₽ в месяц</div></div>
+      <div class="pprice">${p.rub} ₽</div>`;
+    el.onclick=()=>onPay(p.id);
+    el.onkeydown=(e)=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();onPay(p.id);} };
+    box.appendChild(el);
+  });
+}
 
-    // ==========================================
-    // VLESS
-    // ==========================================
-    async function fetchVless() {
-      if (cachedVless && (Date.now() - cachedAt) < CACHE_MS) return cachedVless;
-      const token = await getToken();
-      if (!token) throw new Error('Сессия истекла');
-      const data = await apiCall(token, 'get-vless', {});
-      if (!data.primary) throw new Error('Ссылка не получена');
-      cachedVless = data.primary;
-      cachedAt = Date.now();
-      return cachedVless;
-    }
+function showHow(mode){
+  $("howSec").classList.remove("hidden");
+  const steps = mode==="connect"
+    ? ["Скопируйте постоянный ключ выше.",
+       "Откройте «"+CONFIG.VPN_APP_NAME+"» и вставьте ключ из буфера.",
+       "Включите подключение — готово."]
+    : ["Возьмите бесплатный ключ на 30 минут и скопируйте его.",
+       "Вставьте ключ в «"+CONFIG.VPN_APP_NAME+"» и включите подключение.",
+       "Откроется Telegram — оплатите подписку в боте.",
+       "Вернитесь сюда: появится постоянный ключ."];
+  $("howTitle").textContent = mode==="connect" ? "Как подключиться" : "Как оплатить";
+  const ol=$("howSteps"); ol.innerHTML="";
+  steps.forEach(s=>{ const li=document.createElement("li"); li.textContent=s; ol.appendChild(li); });
+}
 
-    document.getElementById('copyBtn').addEventListener('click', async () => {
-      toast('Получаем ключ...');
-      try {
-        const vless = await fetchVless();
-        await copyToClipboard(vless);
-        toast('✅ VLESS-ключ скопирован!');
-      } catch(e) { toast('Ошибка: ' + e.message); }
-    });
+function renderReferral(){
+  if(!st.referral_code){ $("refSec").classList.add("hidden"); return; }
+  $("refSec").classList.remove("hidden");
+  const bonus = st.bonus_days_balance||0;
+  $("refText").textContent = bonus>0
+    ? ("Друг оплачивает — тебе бонусные дни. Накоплено: "+bonus+".")
+    : "Друг оплачивает подписку — тебе бонусные дни.";
+}
+function refLink(){
+  return location.origin+location.pathname+"?ref="+st.referral_code;
+}
 
-    document.getElementById('installBtn').addEventListener('click', async () => {
-      // Заранее получаем VLESS чтобы было готово к копированию
-      try { await fetchVless(); } catch(e) { /* ignore — bottom sheet всё равно покажет */ }
-      openInstallSheet();
-    });
+function renderFoot(){
+  const u = loadCreds();
+  $("foot").innerHTML = (u? "Аккаунт "+u.username+" · " : "")+"доступ хранится в этом браузере";
+}
 
-    // ==========================================
-    // PLATFORM DETECTION
-    // ==========================================
-    function getPlatform() {
-      const ua = navigator.userAgent || '';
-      if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
-      if (/android/i.test(ua)) return 'android';
-      if (/Macintosh|MacIntel/.test(ua)) return 'mac';
-      if (/Win/.test(ua)) return 'windows';
-      return 'mac';
-    }
+/* =================== trial countdown =================== */
+function startTick(){
+  stopTick(); tick();
+  tickTimer=setInterval(tick,1000);
+}
+function stopTick(){ if(tickTimer){clearInterval(tickTimer); tickTimer=null;} }
+function tick(){
+  if(!trialExpiresAt) return;
+  const ms = trialExpiresAt - new Date();
+  if(ms<=0){ stopTick(); st.has_active=false; st.current_kind="none"; apply(st); return; }
+  const total=30*60*1000;
+  setRing(Math.min(1,ms/total), mmss(ms));
+}
+function mmss(ms){ const s=Math.floor(ms/1000); return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0"); }
 
-    // ==========================================
-    // 📋 РЕКОМЕНДОВАННЫЕ ПРИЛОЖЕНИЯ ДЛЯ iOS / Mac / Windows
-    // ==========================================
-    const APPS_BY_PLATFORM = {
-      ios: [
-        { name: 'Streisand', note: 'Бесплатный, рекомендуем', icon: 'S', color: '#6366f1', storeUrl: 'https://apps.apple.com/app/streisand/id6450534064' },
-        { name: 'V2Box',     note: 'Простой и удобный',       icon: 'V', color: '#3b82f6', storeUrl: 'https://apps.apple.com/app/v2box-v2ray-client/id6446814690' },
-        { name: 'Happ',      note: 'Альтернативный клиент',   icon: '✦', color: '#ec4899', storeUrl: 'https://apps.apple.com/app/happ-proxy-utility/id6504287215' },
-      ],
-      mac: [
-        { name: 'Streisand', note: 'Из Mac App Store',       icon: 'S', color: '#6366f1', storeUrl: 'https://apps.apple.com/app/streisand/id6450534064' },
-        { name: 'V2RayXS',   note: 'Open-source, GitHub',    icon: 'X', color: '#14b8a6', storeUrl: 'https://github.com/tzmax/V2RayXS/releases' },
-      ],
-      windows: [
-        { name: 'Throne',    note: 'Open-source, GitHub',    icon: 'T', color: '#8b5cf6', storeUrl: 'https://github.com/ptrss/throne/releases' },
-        { name: 'Hiddify',   note: 'Удобный GUI',            icon: 'H', color: '#f59e0b', storeUrl: 'https://github.com/hiddify/hiddify-app/releases' },
-      ],
-    };
+/* =================== polling =================== */
+function startPolling(){
+  stopPolling();
+  pollTimer=setInterval(async ()=>{
+    if(document.hidden) return;
+    if(st && st.current_kind==="paid" && st.has_active) return; // активной подписке частый опрос не нужен
+    try{ const r=await api("/subscription-status",{},{auth:true}); if(r&&r.state) apply(r.state); }catch{}
+  },1000);
+}
+function stopPolling(){ if(pollTimer){clearInterval(pollTimer); pollTimer=null;} }
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden && token) startPolling(); });
 
-    // ==========================================
-    // BOTTOM SHEET — содержимое зависит от платформы
-    // ==========================================
-    function openInstallSheet() {
-      const platform = getPlatform();
-      const content = document.getElementById('sheetContent');
+/* =================== first-visit credentials =================== */
+function showCreds(c){
+  $("credSec").classList.remove("hidden");
+  $("credUser").textContent=c.username; $("credPass").textContent=c.password;
+}
 
-      if (platform === 'android') {
-        renderAndroidSheet(content);
-      } else if (platform === 'ios') {
-        renderManualSheet(content, 'iOS', APPS_BY_PLATFORM.ios);
-      } else if (platform === 'mac') {
-        renderManualSheet(content, 'macOS', APPS_BY_PLATFORM.mac);
-      } else {
-        renderManualSheet(content, 'Windows', APPS_BY_PLATFORM.windows);
-      }
+/* =================== storage =================== */
+function saveCreds(c){ localStorage.setItem(LS.creds, JSON.stringify(c)); }
+function loadCreds(){ try{ return JSON.parse(localStorage.getItem(LS.creds)); }catch{ return null; } }
+function persistToken(t){ localStorage.setItem(LS.token, t||""); }
 
-      document.getElementById('sheetOverlay').classList.add('visible');
-    }
-
-    function renderAndroidSheet(container) {
-      const apkAvailable = ANDROID_APK_URL && ANDROID_APK_URL.length > 0;
-
-      container.innerHTML = `
-        <h3>Установка на Android</h3>
-        <p class="sdesc">Скачайте приложение GPN — оно автоматически подключится к вашей подписке. Ключ копировать не нужно.</p>
-
-        ${apkAvailable ? `
-          <a class="download-btn" id="apkDownloadLink" href="${ANDROID_APK_URL}" download>
-            <span style="font-size:18px">⬇</span>
-            <span>Скачать GPN.apk · v${ANDROID_APK_VERSION}</span>
-          </a>
-
-          <div class="step">
-            <div class="step-num">1</div>
-            <div class="step-text">Скачайте файл <b>GPN.apk</b> по кнопке выше</div>
-          </div>
-          <div class="step">
-            <div class="step-num">2</div>
-            <div class="step-text">Откройте файл — Android попросит разрешить установку из неизвестных источников. <b>Разрешите</b> и нажмите «Установить»</div>
-          </div>
-          <div class="step">
-            <div class="step-num">3</div>
-            <div class="step-text">Запустите GPN — подписка подтянется автоматически. Нажмите кнопку <b>Подключить</b></div>
-          </div>
-
-          <div class="divider">или вручную</div>
-
-          <button class="sheet-copy-btn" id="androidCopyBtn">
-            <span>📋</span>
-            <span>Скопировать VLESS-ключ для другого клиента</span>
-          </button>
-        ` : `
-          <div class="step" style="background:var(--amber-bg);border-color:rgba(251,191,36,.2)">
-            <div class="step-num" style="background:var(--amber);color:var(--bg)">!</div>
-            <div class="step-text">Приложение для Android <b>в разработке</b>. Пока используйте копирование ключа и любой VPN-клиент (v2rayNG, Hiddify).</div>
-          </div>
-
-          <button class="sheet-copy-btn" id="androidCopyBtn" style="margin-top:14px">
-            <span>📋</span>
-            <span>Скопировать VLESS-ключ</span>
-          </button>
-        `}
-      `;
-
-      const copyBtn = document.getElementById('androidCopyBtn');
-      if (copyBtn) copyBtn.addEventListener('click', sheetCopyKey);
-    }
-
-    function renderManualSheet(container, platformLabel, apps) {
-      container.innerHTML = `
-        <h3>Установка на ${platformLabel}</h3>
-        <p class="sdesc">Скопируйте VLESS-ключ и импортируйте его в любой VPN-клиент. Ниже — рекомендованные приложения.</p>
-
-        <button class="download-btn" id="manualCopyBtn">
-          <span style="font-size:18px">📋</span>
-          <span>Скопировать VLESS-ключ</span>
-        </button>
-
-        <div class="step">
-          <div class="step-num">1</div>
-          <div class="step-text">Установите одно из приложений ниже</div>
-        </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <div class="step-text">Нажмите кнопку <b>«Скопировать VLESS-ключ»</b> выше</div>
-        </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <div class="step-text">Откройте приложение → нажмите <b>«+»</b> → <b>«Импорт из буфера»</b> (Import from Clipboard)</div>
-        </div>
-
-        <div class="divider">приложения</div>
-
-        ${apps.map(a => `
-          <a class="app-row" href="${a.storeUrl}" target="_blank" rel="noopener">
-            <div class="aicon" style="background:${a.color}">${a.icon}</div>
-            <div class="ainfo">
-              <div class="aname">${a.name}</div>
-              <div class="anote">${a.note}</div>
-            </div>
-            <span class="arrow">↗</span>
-          </a>
-        `).join('')}
-      `;
-
-      document.getElementById('manualCopyBtn').addEventListener('click', sheetCopyKey);
-    }
-
-    async function sheetCopyKey() {
-      try {
-        const vless = await fetchVless();
-        await copyToClipboard(vless);
-        toast('✅ VLESS-ключ скопирован!');
-      } catch(e) { toast('Ошибка: ' + e.message); }
-    }
-
-    function closeSheet() {
-      document.getElementById('sheetOverlay').classList.remove('visible');
-    }
-
-    document.getElementById('sheetOverlay').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) closeSheet();
-    });
-
-    async function copyToClipboard(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-      } catch (_) {
-        const ta = document.createElement('textarea');
-        ta.value = text; ta.style.cssText = 'position:fixed;left:-9999px';
-        document.body.appendChild(ta); ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-      }
-    }
-
-    async function logout() {
-      closeUserMenu();
-      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-      profile = null;
-      clearCache();
-      await sb.auth.signOut();
-      showScreen('auth');
-    }
-
-    function toggleUserMenu() { document.getElementById('userMenu').classList.toggle('visible'); }
-    function closeUserMenu() { document.getElementById('userMenu').classList.remove('visible'); }
-    document.addEventListener('click', (e) => {
-      const pill = document.getElementById('userPill');
-      const menu = document.getElementById('userMenu');
-      if (!pill.contains(e.target) && !menu.contains(e.target)) closeUserMenu();
-    });
-
-    function toast(msg, ms = 2500) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), ms);
-    }
-  </script>
+/* =================== ui plumbing =================== */
+function btn(label, cls, onClick, disabled){
+  const b=document.createElement("button"); b.className="btn "+cls; b.textContent=label;
+  if(disabled){ b.disabled=true; } else if(onClick){ b.addEventListener("click",onClick); }
+  return b;
+}
+function wireStaticButtons(){
+  $("copyKey").addEventListener("click",()=>{ if(st&&(st.subscription_link)) copy(st.subscription_link,"Ключ скопирован"); });
+  $("copyRef").addEventListener("click",()=>{ if(st&&st.referral_code) copy(refLink(),"Ссылка скопирована"); });
+  $("copyCreds").addEventListener("click",()=>{ const c=loadCreds(); if(c) copy("Логин: "+c.username+"\nПароль: "+c.password,"Доступ скопирован"); });
+  $("credDone").addEventListener("click",()=>$("credSec").classList.add("hidden"));
+}
+function fail(title,sub){
+  $("statusPill").textContent="нет связи"; $("statusPill").className="pill";
+  $("stateTitle").textContent=title; $("stateSub").textContent=sub;
+  setRing(0,"!"); $("ringProg").style.stroke="var(--danger)";
+  $("heroActions").innerHTML="";
+  $("heroActions").appendChild(btn("Обновить","ghost",()=>location.reload()));
+}
+</script>
 </body>
 </html>
